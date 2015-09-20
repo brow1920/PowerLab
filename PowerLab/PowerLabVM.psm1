@@ -10,7 +10,7 @@ function New-PlVm
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
 		[string]$Switch = (Get-PlConfigurationData).Environment.Switch.Name,
-		
+
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
 		[ValidateRange(512MB, 64GB)]
@@ -18,17 +18,7 @@ function New-PlVm
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[ValidateScript({
-			$downloadedIsoOses = (Get-PlConfigurationData).Configuration.ISOs.ISO.OS
-			if ($_ -notin $downloadedIsoOses)
-			{
-				throw "Invalid operating system used. Valid values are [$($downloadedIsoOses -join ',')]"
-			}
-			else
-			{
-				$true	
-			}
-		})]
+		[ValidateSet('Windows Server 2012 R2 (x64)')]
 		[string]$OperatingSystem = (Get-PlDefaultVMConfig).OS.Name,
 		
 		[Parameter()]
@@ -44,10 +34,6 @@ function New-PlVm
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
 		[string]$Path = (Get-PlDefaultVMConfig).Path,
-		
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
-		[switch]$InstallOS,
 	
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
@@ -90,6 +76,7 @@ function New-PlVm
 				}
 				$Name = '{0}{1}' -f $osPrefix, ($latestNum + 1).ToString('00')
 			}
+
 			$vmParams = @{
 				'ComputerName' = $HostServer.Name
 				'Name' = $Name
@@ -99,10 +86,6 @@ function New-PlVm
 				'Generation' = $Generation
 			}
 			New-VM @vmParams
-			if ($InstallOs.IsPresent)
-			{
-				
-			}
 		}
 		catch
 		{
