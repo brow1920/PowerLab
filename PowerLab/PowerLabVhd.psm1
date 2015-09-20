@@ -224,23 +224,32 @@ function Get-PlVhd
 	begin
 	{
 		$ErrorActionPreference = 'Stop'
+		function ConvertTo-UncPath
+		{	
+			[CmdletBinding()]
+			param (
+				[Parameter(Mandatory)]
+				[string]$LocalFilePath,
+				
+				[Parameter(Mandatory)]
+				[string]$ComputerName
+			)
+			process
+			{
+				$RemoteFilePathDrive = ($LocalFilePath | Split-Path -Qualifier).TrimEnd(':')
+				"\\$ComputerName\$RemoteFilePathDrive`$$($LocalFilePath | Split-Path -NoQualifier)"
+			}
+		}
 	}
 	process
 	{
 		try
 		{
-			$vhdsPath = (Get-PlDefaultVHDConfig).Path
+			$vhdsPath = ConvertTo-UncPath -LocalFilePath (Get-PlDefaultVHDConfig).Path -ComputerName $HostServer.Name
 			if ($PSCmdlet.ParameterSetName -eq 'None')
 			{
-				$icmParams = @{
-					'ComputerName' = $HostServer.Name
-					'Credential' = $HostServer.Credential
-				}
-				
-				Invoke-Command @icmParams -ScriptBlock {
-					Get-ChildItem -Path $using:vhdsPath -File | foreach {
-						Get-VHD -Path $_.FullName
-					}
+				Get-ChildItem -Path $vhdsPath -File | foreach {
+					Get-VHD -Path $_.FullName -ComputerName $HostServer.Name
 				}
 			}
 			else
@@ -278,30 +287,13 @@ function Remove-PlVhd
 		
 		[Parameter(ParameterSetName = 'Path')]
 		[ValidateNotNullOrEmpty()]
-		[ValidatePattern('\.vhdx?$')]
+		[ValidatePattern('^\w:.+\.vhdx?$')]
 		[string]$Path = (Get-PlDefaultVHDConfig).Path
 		
 	)
 	begin
 	{
 		$ErrorActionPreference = 'Stop'
-		function ConvertTo-LocalPath
-		{	
-			[CmdletBinding()]
-			[OutputType([System.String])]
-			param
-			(
-				[Parameter(Mandatory)]
-				[ValidateNotNullOrEmpty()]
-				[string]$Path
-			)
-			
-			$UncPathSpl = $Path.Split('\')
-			$Drive = $UncPathSpl[3].Trim('$')
-			$FolderTree = $UncPathSpl[4..($UncPathSpl.Length - 1)]
-			'{0}:\{1}' -f $Drive, ($FolderTree -join '\')
-		}
-		
 	}
 	process
 	{
@@ -313,14 +305,7 @@ function Remove-PlVhd
 			}
 			if ($PSBoundParameters.ContainsKey('InputObject'))
 			{
-				if ($InputObject.Path.StartsWith('\\'))
-				{
-					$Path = ConvertTo-LocalPath -Path $InputObject.Path
-				}
-				else
-				{
-					$Path = $InputObject.Path
-				}
+				$Path = $InputObject.Path
 			}
 			
 			Invoke-Command @icmParams -ScriptBlock { Remove-Item -Path $using:Path -Force }
