@@ -184,16 +184,12 @@ function Remove-PlVM
 	process {
 		try
 		{
-			$removeParams = @{ }
-			if ($PSBoundParameters.ContainsKey('Force')) {
-				$removeParams.Force = $true
-			}
 			Get-VM -ComputerName $HostServer.Name -Name $Name | Remove-VM
 			$vmPath = (Get-PlDefaultVMConfig).Path
 			$icmParams = @{
 				'ComputerName' = $HostServer.Name
 				'Credential' = $HostServer.Credential
-				'ScriptBlock' = { Get-ChildItem -Path $using:vmPath -Include '*.vhd*' | Remove-Item -Force }
+				'ScriptBlock' = { Remove-Item -Path "$using:vmPath\$using:Name" -Force -Recurse }
 			}
 			Invoke-Command @icmParams
 		}
