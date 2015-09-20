@@ -207,18 +207,19 @@ function New-PlVhd
 
 function Get-PlVhd
 {
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = 'None')]
 	param
 	(
-		
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
-		[string]$Path = (Get-PlDefaultVHDConfig).Path,
-		
-		[Parameter()]
+		[Parameter(ParameterSetName = 'Name')]
 		[ValidateNotNullOrEmpty()]
 		[ValidatePattern('\.vhdx?$')]
-		[string]$Name
+		[string]$Name,
+		
+		[Parameter(ParameterSetName = 'Path')]
+		[ValidateNotNullOrEmpty()]
+		[ValidatePattern('^\w:.+\.vhdx?$')]
+		[string]$Path
+	
 	)
 	begin
 	{
@@ -228,23 +229,35 @@ function Get-PlVhd
 	{
 		try
 		{
-			if ($PSBoundParameters.ContainsKey('Name'))
+			$vhdsPath = (Get-PlDefaultVHDConfig).Path
+			if ($PSCmdlet.ParameterSetName -eq 'None')
 			{
-				Write-Verbose -Message "Checking for VHD at [$Path\$Name]"
+				$icmParams = @{
+					'ComputerName' = $HostServer.Name
+					'Credential' = $HostServer.Credential
+				}
+				
+				Invoke-Command @icmParams -ScriptBlock {
+					Get-ChildItem -Path $using:vhdsPath -File | foreach {
+						Get-VHD -Path $_.FullName
+					}
+				}
+			}
+			else
+			{
+				if ($PSBoundParameters.ContainsKey('Name'))
+				{
+					$Path = "$vhdsPath\$Name"
+				}
 				try
 				{
-					Get-Vhd -Path "$Path\$Name" -ComputerName $HostServer.Name
+					Get-Vhd -Path $Path -ComputerName $HostServer.Name
 				}
 				catch [System.Management.Automation.ActionPreferenceStopException]
 				{
 					
 				}
-			}
-			else
-			{
-				Get-ChildItem (ConvertTo-UncPath -ComputerName $HostServer.Name -LocalFilePath $Path) -File | foreach {
-					Get-VHD -Path $_.FullName -ComputerName $HostServer.Name
-				}
+				
 			}
 		}
 		catch
