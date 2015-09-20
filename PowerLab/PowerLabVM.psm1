@@ -163,12 +163,9 @@ function Remove-PlVM
 	process {
 		try
 		{
-			if ($RemoveAttachedVhd.IsPresent)
-			{
-				Get-PlVhd -Name "$Name.$((Get-PlDefaultVHDConfig).Type)"
-			}
-			
-			Get-VM -ComputerName $HostServer.Name -Name $Name | Remove-VM -Force
+			$vm = Get-VM -ComputerName $HostServer.Name -Name $Name
+			$diskPath = $vm.HardDrives.Path
+			$vm | Remove-VM -Force
 			$vmPath = (Get-PlDefaultVMConfig).Path
 			$icmParams = @{
 				'ComputerName' = $HostServer.Name
@@ -179,13 +176,7 @@ function Remove-PlVM
 			
 			if ($RemoveAttachedVhd.IsPresent)
 			{
-				Write-Verbose -Message "Removing the VHD [$($vhdPath)] from file system"
-				$icmParams = @{
-					'ComputerName' = $HostServer.Name
-					'Credential' = $HostServer.Credential
-					'ScriptBlock' = {Remove-Item -Path $using:vhdPath -Force }
-				}
-				Invoke-Command @icmParams
+				Get-PlVhd -Path $diskPath | Remove-PlVhd
 			}
 		}
 		catch
