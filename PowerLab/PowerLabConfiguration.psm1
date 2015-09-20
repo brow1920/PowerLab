@@ -141,6 +141,30 @@ function Get-PlDefaultVHDConfig
 	}
 }
 
+function Get-PlDefaultDatabaseConfig
+{
+	[CmdletBinding()]
+	param
+	(
+	
+	)
+	begin
+	{
+		$ErrorActionPreference = 'Stop'
+	}
+	process
+	{
+		try
+		{
+			(Get-PlConfigurationData).Configuration.Database
+		}
+		catch
+		{
+			Write-Error $_.Exception.Message
+		}
+	}
+}
+
 function Get-PlDefaultVMConfig
 {
 	[CmdletBinding()]
