@@ -171,7 +171,7 @@ function Remove-PlVM
 			$icmParams = @{
 				'ComputerName' = $HostServer.Name
 				'Credential' = $HostServer.Credential
-				'ScriptBlock' = { Get-ChildItem -Path $using:vmPath -Filter '*.vhd*' | Remove-Item -Force }
+				'ScriptBlock' = { Get-ChildItem -Path $using:vmPath -Include '*.vhd*' | Remove-Item -Force }
 			}
 			Invoke-Command @icmParams
 		}
