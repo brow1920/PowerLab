@@ -24,6 +24,11 @@ function New-PlVm
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
 		[string]$Path = (Get-PlDefaultVMConfig).Path,
+		
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[ValidateSet('Windows Server 2012 R2 (x64)')]
+		[string]$OperatingSystem = (Get-PlDefaultVMConfig).OS.Name,
 	
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
@@ -45,7 +50,6 @@ function New-PlVm
 				{
 					throw "No default hostname set in configuration for OS [$($OperatingSystem)]"	
 				}
-				$os = $os | where { $_.Edition -eq $Edition }
 				$osPrefix = $os.Prefix
 				$existingOSNames = (Get-PlVm).Name | where { $_ -match "^$osPrefix" } | Sort -Descending
 				if (-not $existingOSNames)
@@ -161,7 +165,7 @@ function Remove-PlVM
 		{
 			if ($RemoveAttachedVhd.IsPresent)
 			{
-				$vhdPath = (Get-VMHardDiskDrive -ComputerName $HostServer.Name -VMName $Name).Path
+				Get-PlVhd -Name "$Name.$((Get-PlDefaultVHDConfig).Type)"
 			}
 			
 			Get-VM -ComputerName $HostServer.Name -Name $Name | Remove-VM -Force
