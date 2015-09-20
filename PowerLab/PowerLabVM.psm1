@@ -18,16 +18,6 @@ function New-PlVm
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[ValidateSet('Windows Server 2012 R2 (x64)')]
-		[string]$OperatingSystem = (Get-PlDefaultVMConfig).OS.Name,
-		
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
-		[ValidateSet('ServerStandardCore')]
-		[string]$Edition = (Get-PlDefaultVMConfig).OS.Edition,
-		
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
 		[ValidateSet('1','2')]
 		[int]$Generation = (Get-PlDefaultVMConfig).Generation,
 		
