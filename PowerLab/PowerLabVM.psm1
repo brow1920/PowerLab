@@ -34,7 +34,7 @@ function New-PlVm
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
 		[ValidateSet('ServerStandardCore')]
-		[string]$Edition = 'ServerStandardCore',
+		[string]$Edition = (Get-PlDefaultVMConfig).OS.Edition,
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
@@ -43,7 +43,7 @@ function New-PlVm
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[string]$VMPath = (Get-PlDefaultVMConfig).Path,
+		[string]$Path = (Get-PlDefaultVMConfig).Path,
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
@@ -93,7 +93,7 @@ function New-PlVm
 			$vmParams = @{
 				'ComputerName' = $HostServer.Name
 				'Name' = $Name
-				'Path' = $VMPath
+				'Path' = $Path
 				'MemoryStartupBytes' = $MemoryStartupBytes
 				'Switch' = $Switch
 				'Generation' = $Generation
