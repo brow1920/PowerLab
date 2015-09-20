@@ -5,6 +5,18 @@ ehthumbs.db
 # Folder config file
 Desktop.ini
 
+# ISO Files
+*.iso
+
+# PowerShell Studio files
+*.psproj
+*.psprojs
+*.psbuild
+*.pss
+
+# unattended XML files that contain a Windows product key
+*/AutoUnattend/*.xml
+
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
 
