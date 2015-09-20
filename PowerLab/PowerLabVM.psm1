@@ -174,9 +174,11 @@ function Remove-PlVM
 	(
 		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]
 		[ValidateNotNullOrEmpty()]
-		[string[]]$Name
-		
-			
+		[string[]]$Name,
+	
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[switch]$RemoveAttachedVhd
 	)
 	begin {
 		$ErrorActionPreference = 'Stop'
@@ -184,6 +186,11 @@ function Remove-PlVM
 	process {
 		try
 		{
+			if ($RemoveAttachedVhd.IsPresent)
+			{
+				$vhdPath = (Get-VMHardDiskDrive -ComputerName $HostServer.Name -VMName $Name).Path
+			}
+			
 			Get-VM -ComputerName $HostServer.Name -Name $Name | Remove-VM
 			$vmPath = (Get-PlDefaultVMConfig).Path
 			$icmParams = @{
@@ -192,6 +199,17 @@ function Remove-PlVM
 				'ScriptBlock' = { Remove-Item -Path "$using:vmPath\$using:Name" -Force -Recurse }
 			}
 			Invoke-Command @icmParams
+			
+			if ($RemoveAttachedVhd.IsPresent)
+			{
+				Write-Verbose -Message "Removing the VHD [$($vhdPath)] from file system"
+				$icmParams = @{
+					'ComputerName' = $HostServer.Name
+					'Credential' = $HostServer.Credential
+					'ScriptBlock' = {Remove-Item -Path $using:vhdPath -Force }
+				}
+				Invoke-Command @icmParams
+			}
 		}
 		catch
 		{
