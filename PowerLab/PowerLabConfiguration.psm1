@@ -221,6 +221,37 @@ function Get-PlIsoFile
 	}
 }
 
+function Get-PlAnswerFile
+{
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory)]
+		[ValidateNotNullOrEmpty()]
+		[string]$VMName
+			
+	)
+	begin {
+		$ErrorActionPreference = 'Stop'
+	}
+	process {
+		try
+		{
+			$ansPath = (Get-PlConfigurationData).Configuration.Folders.SelectSingleNode("//Folder[@Name='UnattendXml' and @Location='HostServer']").Path
+			$icmParams = @{
+				'ComputerName' = $HostServer.Name
+				'Credential' = $HostServer.Credential
+				'ScriptBlock' = {Get-Item -Path "$using:ansPath\$using:VMName.xml"}
+			}
+			Invoke-Command @icmParams
+		}
+		catch
+		{
+			Write-Error $_.Exception.Message
+		}
+	}
+}
+
 function Test-PlDatabase
 {
 	[CmdletBinding()]
