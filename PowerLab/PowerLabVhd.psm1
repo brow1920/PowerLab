@@ -1,3 +1,40 @@
+function Add-OperatingSystem
+{
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory,ValueFromPipeline)]
+		[ValidateNotNullOrEmpty()]
+		[Microsoft.HyperV.PowerShell.VirtualMachine]$InputObject,
+	
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[ValidateSet('Windows Server 2012 R2 (x64)')]
+		[string]$OperatingSystem
+		
+	)
+	begin {
+		$ErrorActionPreference = 'Stop'
+	}
+	process {
+		try
+		{
+			$vhdName = "$($InputObject.Name).$((Get-PlDefaultVHDConfig).Type)"
+			Write-Verbose -Message "VHD name is [$($vhdName)]"
+			if (Test-PlVhd -Name $vhdName)
+			{
+				throw "There is already a VHD called [$($vhdName)]"	
+			}
+			$vhd = New-PlVhd -Name $vhdName -OperatingSystem $OperatingSystem
+			Add-VMHardDiskDrive -ComputerName $hostserver.Name -Path $vhd.Path -VMName $InputObject.Name
+		}
+		catch
+		{
+			Write-Error $_.Exception.Message
+		}
+	}
+}
+
 function ConvertTo-VirtualDisk
 {
 	[CmdletBinding()]
@@ -37,8 +74,11 @@ function ConvertTo-VirtualDisk
 	
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[string]$VHDPartitionStyle = (Get-PlDefaultVHDConfig).PartitionStyle
-		
+		[string]$VHDPartitionStyle = (Get-PlDefaultVHDConfig).PartitionStyle,
+	
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[switch]$PassThru
 		
 	)
 	process
@@ -61,6 +101,10 @@ function ConvertTo-VirtualDisk
 				if ($PSBoundParameters.ContainsKey('AnswerFilePath')) {
 					$convertParams.UnattendPath = $using:AnswerFilePath
 				}
+				if ($PassThru.IsPresent)
+				{
+					$convertParams.PassThru = $true	
+				}
 				Convert-WindowsImage @convertParams
 			}
 			Invoke-Command -ComputerName $HostServer.Name -Credential $HostServer.Credential -ScriptBlock $sb
@@ -80,17 +124,13 @@ function New-PlVhd
 		
 		[Parameter(Mandatory)]
 		[ValidateNotNullOrEmpty()]
+		[ValidatePattern('\.vhdx?$')]
 		[string]$Name,
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
 		[ValidateRange(512MB, 1TB)]
 		[int64]$Size = (Invoke-Expression (Get-PlDefaultVHDConfig).Size),
-		
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
-		[ValidateSet('VHD', 'VHDX')]
-		[string]$Type = 'VHDX',
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
@@ -133,9 +173,10 @@ function New-PlVhd
 			{
 				$cvtParams = $params + @{
 					IsoFilePath = (Get-PlIsoFile -OperatingSystem $OperatingSystem).FullName
-					VhdPath = "$Path\$Name.$Type"
-					VhdFormat = $Type
+					VhdPath = "$Path\$Name"
+					VhdFormat = ([system.io.path]::GetExtension($Name) -replace '^.')
 					Sizing = $Sizing
+					PassThru = $true
 				}
 				if ($PSBoundParameters.ContainsKey('UnattendedXmlPath')) {
 					$cvtParams.AnswerFilePath = $UnattendedXmlPath
@@ -169,6 +210,11 @@ function Get-PlVhd
 	[CmdletBinding()]
 	param
 	(
+		
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string]$Path = (Get-PlDefaultVHDConfig).Path,
+		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
 		[ValidatePattern('\.vhdx?$')]
@@ -182,15 +228,23 @@ function Get-PlVhd
 	{
 		try
 		{
-			$Path = (Get-PlDefaultVHDConfig).Path
-			if ($PSBoundParameters.ContainsKey('Name')) {
-				Get-Vhd -Path "$Path\$Name" -ComputerName $HostServer.Name
+			if ($PSBoundParameters.ContainsKey('Name'))
+			{
+				Write-Verbose -Message "Checking for VHD at [$Path\$Name]"
+				try
+				{
+					Get-Vhd -Path "$Path\$Name" -ComputerName $HostServer.Name
+				}
+				catch [System.Management.Automation.ActionPreferenceStopException]
+				{
+					
+				}
 			}
 			else
 			{
 				Get-ChildItem (ConvertTo-UncPath -ComputerName $HostServer.Name -LocalFilePath $Path) -File | foreach {
-					Get-VHD -Path $_.FullName -ComputerName $HostServer.Name	
-				}	
+					Get-VHD -Path $_.FullName -ComputerName $HostServer.Name
+				}
 			}
 		}
 		catch
@@ -202,32 +256,92 @@ function Get-PlVhd
 
 function Remove-PlVhd
 {
-	[CmdletBinding(DefaultParameterSetName = 'InputObject', SupportsShouldProcess)]
+	[CmdletBinding(DefaultParameterSetName = 'InputObject')]
 	param
 	(
 		[Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject')]
 		[ValidateNotNullOrEmpty()]
-		[object]
-		$InputObject,
+		[Microsoft.Vhd.PowerShell.VirtualHardDisk]$InputObject,
 		
-		[Parameter(Mandatory, ParameterSetName = 'VM')]
+		[Parameter(ParameterSetName = 'Path')]
 		[ValidateNotNullOrEmpty()]
-		[string]$VmName,
-		
-		[Parameter(Mandatory, ValueFromPipelineByPropertyName = 'VM')]
-		[ValidateNotNullOrEmpty()]
-		[string]$VhdName
+		[ValidatePattern('\.vhdx?$')]
+		[string]$Path = (Get-PlDefaultVHDConfig).Path
 		
 	)
 	begin
 	{
 		$ErrorActionPreference = 'Stop'
+		function ConvertTo-LocalPath
+		{	
+			[CmdletBinding()]
+			[OutputType([System.String])]
+			param
+			(
+				[Parameter(Mandatory)]
+				[ValidateNotNullOrEmpty()]
+				[string]$Path
+			)
+			
+			$UncPathSpl = $Path.Split('\')
+			$Drive = $UncPathSpl[3].Trim('$')
+			$FolderTree = $UncPathSpl[4..($UncPathSpl.Length - 1)]
+			'{0}:\{1}' -f $Drive, ($FolderTree -join '\')
+		}
+		
 	}
 	process
 	{
 		try
 		{
+			$icmParams = @{
+				'ComputerName' = $HostServer.Name
+				'Credential' = $HostServer.Credential
+			}
+			if ($PSBoundParameters.ContainsKey('InputObject'))
+			{
+				if ($InputObject.Path.StartsWith('\\'))
+				{
+					$Path = ConvertTo-LocalPath -Path $InputObject.Path
+				}
+				else
+				{
+					$Path = $InputObject.Path
+				}
+			}
 			
+			Invoke-Command @icmParams -ScriptBlock { Remove-Item -Path $using:Path -Force }
+			
+		}
+		catch
+		{
+			Write-Error $_.Exception.Message
+		}
+	}
+}
+
+function Test-PlVhd
+{
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory)]
+		[ValidateNotNullOrEmpty()]
+		[string]$Name
+			
+	)
+	begin {
+		$ErrorActionPreference = 'Stop'
+	}
+	process {
+		try
+		{
+			if (Get-PlVhd -Name $Name)
+			{
+				$true
+			} else {
+				$false	
+			}
 		}
 		catch
 		{
