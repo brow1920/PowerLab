@@ -164,7 +164,7 @@ function Remove-PlVM
 				$vhdPath = (Get-VMHardDiskDrive -ComputerName $HostServer.Name -VMName $Name).Path
 			}
 			
-			Get-VM -ComputerName $HostServer.Name -Name $Name | Remove-VM
+			Get-VM -ComputerName $HostServer.Name -Name $Name | Remove-VM -Force
 			$vmPath = (Get-PlDefaultVMConfig).Path
 			$icmParams = @{
 				'ComputerName' = $HostServer.Name
