@@ -145,6 +145,28 @@ function Get-PlVm
 	}
 }
 
+function Get-PlVmDeploymentStatus
+{
+	[CmdletBinding()]
+	param
+	(
+		
+	)
+	begin {
+		$ErrorActionPreference = 'Stop'
+	}
+	process {
+		try
+		{
+				
+		}
+		catch
+		{
+			Write-Error $_.Exception.Message
+		}
+	}
+}
+
 function Remove-PlVM
 {
 	[CmdletBinding()]

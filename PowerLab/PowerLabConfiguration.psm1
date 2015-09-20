@@ -52,7 +52,7 @@ function New-PlDatabase
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[string]$Database = 'PowerLab',
+		[string]$Database = $Project.Name,
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
