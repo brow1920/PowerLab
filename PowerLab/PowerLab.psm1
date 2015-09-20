@@ -3,7 +3,7 @@
 #region Configuration
 Set-StrictMode -Version Latest
 
-$Project = [pscustomobject]@{'Name' = 'PowerLab'}
+$script:Project = [pscustomobject]@{'Name' = 'PowerLab'}
 
 $global:HostServer = Get-PlHostServerConfiguration
 #endregion

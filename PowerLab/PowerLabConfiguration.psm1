@@ -418,7 +418,9 @@ function Get-PlConfigurationFile
 	{
 		try
 		{
-			Get-Item -Path (Get-ItemProperty -Path $RegistryKeyConfigPath -Name $RegistryConfigValue).$RegistryConfigValue
+			Write-Verbose -Message "Finding value of [$($RegistryConfigValue)] at path [$($RegistryKeyConfigPath)]"
+			$path = (Get-ItemProperty -Path $RegistryKeyConfigPath -Name $RegistryConfigValue).$RegistryConfigValue
+			Get-Item -Path $path
 		}
 		catch
 		{
