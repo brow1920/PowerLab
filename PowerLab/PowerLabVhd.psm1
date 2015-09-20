@@ -287,13 +287,28 @@ function Remove-PlVhd
 		
 		[Parameter(ParameterSetName = 'Path')]
 		[ValidateNotNullOrEmpty()]
-		[ValidatePattern('^\w:.+\.vhdx?$')]
 		[string]$Path = (Get-PlDefaultVHDConfig).Path
 		
 	)
 	begin
 	{
 		$ErrorActionPreference = 'Stop'
+		function ConvertTo-LocalPath
+		{	
+			[CmdletBinding()]
+			[OutputType([System.String])]
+			param
+			(
+				[Parameter(Mandatory)]
+				[ValidateNotNullOrEmpty()]
+				[string]$Path
+			)
+			
+			$UncPathSpl = $Path.Split('\')
+			$Drive = $UncPathSpl[3].Trim('$')
+			$FolderTree = $UncPathSpl[4..($UncPathSpl.Length - 1)]
+			'{0}:\{1}' -f $Drive, ($FolderTree -join '\')
+		}
 	}
 	process
 	{
@@ -307,7 +322,10 @@ function Remove-PlVhd
 			{
 				$Path = $InputObject.Path
 			}
-			
+			if ($Path.StartsWith('\\'))
+			{
+				$Path = ConvertTo-LocalPath -Path $Path	
+			}
 			Invoke-Command @icmParams -ScriptBlock { Remove-Item -Path $using:Path -Force }
 			
 		}
