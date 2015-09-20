@@ -187,6 +187,40 @@ function Get-PlDefaultVMConfig
 	}
 }
 
+function Get-PlIsoFile
+{
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory)]
+		[ValidateNotNullOrEmpty()]
+		[ValidateSet('Windows Server 2012 R2 (x64)')]
+		[string]$OperatingSystem
+			
+	)
+	begin {
+		$ErrorActionPreference = 'Stop'
+	}
+	process {
+		try
+		{
+			$isoName = (Get-PlConfigurationData).Configuration.ISOs.SelectSingleNode("//ISO[@OS='$OperatingSystem']").Name
+			$isosPath = (Get-PlConfigurationData).Configuration.Folders.SelectSingleNode("//Folder[@Name='ISO' and @Location='HostServer']").Path
+			$isoPath = "$isosPath\$isoName"
+			$icmParams = @{
+				'ComputerName' = $HostServer.Name
+				'Credential' = $HostServer.Credential
+				'ScriptBlock' = { Get-Item -Path $using:isoPath}
+			}
+			Invoke-Command @icmParams 
+		}
+		catch
+		{
+			Write-Error $_.Exception.Message
+		}
+	}
+}
+
 function Test-PlDatabase
 {
 	[CmdletBinding()]
