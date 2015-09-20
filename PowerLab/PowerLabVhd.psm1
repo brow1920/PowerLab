@@ -245,15 +245,16 @@ function Get-PlVhd
 	{
 		try
 		{
-			$vhdsPath = ConvertTo-UncPath -LocalFilePath (Get-PlDefaultVHDConfig).Path -ComputerName $HostServer.Name
 			if ($PSCmdlet.ParameterSetName -eq 'None')
 			{
+				$vhdsPath = ConvertTo-UncPath -LocalFilePath (Get-PlDefaultVHDConfig).Path -ComputerName $HostServer.Name
 				Get-ChildItem -Path $vhdsPath -File | foreach {
 					Get-VHD -Path $_.FullName -ComputerName $HostServer.Name
 				}
 			}
 			else
 			{
+				$vhdsPath = (Get-PlDefaultVHDConfig).Path
 				if ($PSBoundParameters.ContainsKey('Name'))
 				{
 					$Path = "$vhdsPath\$Name"
