@@ -1,4 +1,4 @@
-function ConvertTo-VirtualDrive
+function ConvertTo-VirtualDisk
 {
 	[CmdletBinding()]
 	param
@@ -12,9 +12,14 @@ function ConvertTo-VirtualDrive
 		[ValidateNotNullOrEmpty()]
 		[string]$IsoFilePath,
 		
-		[Parameter(Mandatory)]
+		[Parameter()]
 		[ValidateNotNullOrEmpty()]
 		[string]$AnswerFilePath,
+		
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[ValidateSet('Dynamic', 'Fixed')]
+		[string]$Sizing = (Get-PlDefaultVHDConfig).Sizing,
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
@@ -23,16 +28,16 @@ function ConvertTo-VirtualDrive
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
 		[ValidateRange(512MB, 64TB)]
-		[Uint64]$Size = (Invoke-Expression (Get-PlDefaultVHDConfig).Size),
+		[Uint64]$SizeBytes = (Invoke-Expression (Get-PlDefaultVHDConfig).Size),
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
 		[ValidateSet('VHD', 'VHDX')]
-		[string]$Type = (Get-PlDefaultVHDConfig).Type,
+		[string]$VhdFormat = (Get-PlDefaultVHDConfig).Type,
 	
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[string]$PartitionStyle = (Get-PlDefaultVHDConfig).PartitionStyle
+		[string]$VHDPartitionStyle = (Get-PlDefaultVHDConfig).PartitionStyle
 		
 		
 	)
@@ -46,12 +51,15 @@ function ConvertTo-VirtualDrive
 				. $using:convertFilePath
 				$convertParams = @{
 					SourcePath = $using:IsoFilePath
-					SizeBytes = $using:Size
+					SizeBytes = $using:SizeBytes
 					Edition = $using:Edition
-					#UnattendPath = $using:AnswerFilePath
-					VHDFormat = $using:Type
+					VHDFormat = $using:VhdFormat
 					VHDPath = $using:VhdPath
-					VHDPartitionStyle = $using:PartitionStyle
+					VHDType = $using:Sizing
+					VHDPartitionStyle = $using:VHDPartitionStyle
+				}
+				if ($PSBoundParameters.ContainsKey('AnswerFilePath')) {
+					$convertParams.UnattendPath = $using:AnswerFilePath
 				}
 				Convert-WindowsImage @convertParams
 			}
@@ -66,7 +74,7 @@ function ConvertTo-VirtualDrive
 
 function New-PlVhd
 {
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = 'None')]
 	param
 	(
 		
@@ -91,8 +99,16 @@ function New-PlVhd
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
 		[ValidateSet('Dynamic','Fixed')]
-		[string]$Sizing = (Get-PlDefaultVHDConfig).Sizing
-		
+		[string]$Sizing = (Get-PlDefaultVHDConfig).Sizing,
+	
+		[Parameter(Mandatory,ParameterSetName = 'OSInstall')]
+		[ValidateNotNullOrEmpty()]
+		[ValidateSet('Windows Server 2012 R2 (x64)')]
+		[string]$OperatingSystem,
+	
+		[Parameter(ParameterSetName = 'OSInstall')]
+		[ValidateNotNullOrEmpty()]
+		[string]$UnattendedXmlPath
 	)
 	begin
 	{
@@ -111,19 +127,35 @@ function New-PlVhd
 			Invoke-Command -ComputerName $HostServer.Name -Credential $HostServer.Credential -ScriptBlock $sb
 			
 			$params = @{
-				'Path' = "$Path\$Name.$Type"
 				'SizeBytes' = $Size
-				'ComputerName' = $HostServer.Name
 			}
-			if ($Sizing -eq 'Dynamic')
+			if ($PSBoundParameters.ContainsKey('OperatingSystem'))
 			{
-				$params.Dynamic = $true
+				$cvtParams = $params + @{
+					IsoFilePath = (Get-PlIsoFile -OperatingSystem $OperatingSystem).FullName
+					VhdPath = "$Path\$Name.$Type"
+					VhdFormat = $Type
+					Sizing = $Sizing
+				}
+				if ($PSBoundParameters.ContainsKey('UnattendedXmlPath')) {
+					$cvtParams.AnswerFilePath = $UnattendedXmlPath
+				}
+				ConvertTo-VirtualDisk @cvtParams
 			}
-			elseif ($Sizing -eq 'Fixed')
+			else
 			{
-				$params.Fixed = $true	
+				$params.ComputerName = $HostServer.Name
+				$params.Path = "$Path\$Name.$Type"
+				if ($Sizing -eq 'Dynamic')
+				{
+					$params.Dynamic = $true
+				}
+				elseif ($Sizing -eq 'Fixed')
+				{
+					$params.Fixed = $true
+				}
+				New-VHD @params
 			}
-			New-VHD @params
 		}
 		catch
 		{
