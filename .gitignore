@@ -17,6 +17,9 @@ Desktop.ini
 # unattended XML files that contain a Windows product key
 */AutoUnattend/*.xml
 
+# VHD/VHDx
+*.vhd*
+
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
 
