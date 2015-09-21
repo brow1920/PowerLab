@@ -18,7 +18,7 @@ function New-PlDatabase
 	{
 		try
 		{
-			if (Test-PlDatabase -Database $Database -Instance $Instance)
+			if (Test-PlDatabase)
 			{
 				throw "The database [$($Database)] already exists"
 			}
