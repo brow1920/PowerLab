@@ -176,7 +176,15 @@ function Remove-PlVM
 			
 			if ($RemoveAttachedVhd.IsPresent)
 			{
-				Get-PlVhd -Path $diskPath | Remove-PlVhd
+				if (-not $diskPath)
+				{
+					Write-Verbose -Message "There was no disk attached to [$($Name)]"
+				}
+				else
+				{
+					Write-Verbose -Message "Removing disk [$($diskPath)]..."
+					Get-PlVhd -Path $diskPath | Remove-PlVhd
+				}
 			}
 		}
 		catch
