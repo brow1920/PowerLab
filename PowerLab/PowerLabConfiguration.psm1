@@ -56,7 +56,7 @@ function New-PlDatabase
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[string]$Table = 'VMs'
+		[System.Xml.XmlElement[]]$Table = (Get-PlDefaultDatabaseConfig).Tables.Table
 		
 		
 	)
