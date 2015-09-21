@@ -13,6 +13,14 @@
 						<Column Name="CreationDate" />
 					</Columns>
 				</Table>
+				<Table Name="Activity">
+					<Columns>
+						<Column Name="ID" PrimaryKey="Yes" />
+						<Column Name="VMName"/>
+						<Column Name="Action"/>
+						<Column Name="Date" />
+					</Columns>
+				</Table>
 			</Tables>
 		</Database>
 		<Folders>

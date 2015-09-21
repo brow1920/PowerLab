@@ -48,11 +48,11 @@ function New-PlDatabase
 	(
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[string]$Instance = '.',
+		[string]$Instance = (Get-PlDefaultDatabaseConfig).Instance.Name,
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[string]$Database = $Project.Name,
+		[string]$Database = (Get-PlDefaultDatabaseConfig).Name,
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
