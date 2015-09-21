@@ -1,6 +1,76 @@
 $global:Database = (Get-PlConfigurationData).Configuration.Database.Name
 $global:Instance = (Get-PlConfigurationData).Configuration.Database.Instance.Name
 
+function Add-PlVmDatabaseEntry
+{
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory)]
+		[ValidateNotNullOrEmpty()]
+		[string]$Name,
+		
+		[Parameter(Mandatory)]
+		[ValidateNotNullOrEmpty()]
+		[string]$OperatingSystem,
+		
+		[Parameter(Mandatory)]
+		[ValidateNotNullOrEmpty()]
+		[datetime]$CreationDate,
+	
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string]$VMGroup = 'Default',
+	
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string]$LastAction = 'New VM'
+	)
+	begin {
+		$ErrorActionPreference = 'Stop'
+	}
+	process {
+		try
+		{
+			$params = @{
+				'Column' = 'Name','OperatingSystem','VMGroup','CreationDate','LastAction'
+				'Value' = $Name, $OperatingSystem, $VMGroup, $CreationDate, $LastAction
+			}
+			New-PlDatabaseRow @params
+		}
+		catch
+		{
+			Write-Error $_.Exception.Message
+		}
+	}
+}
+
+function Get-PlVMDatabaseEntry
+{
+	[CmdletBinding()]
+	param
+	(
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string]$Name
+	)
+	begin {
+		$ErrorActionPreference = 'Stop'
+	}
+	process {
+		try
+		{
+			if ($PSBoundParameters.ContainsKey('Name')) {
+				Get-PlDatabaseRow -Column
+			}		
+		}
+		catch
+		{
+			Write-Error $_.Exception.Message
+		}
+	}
+}
+
 function New-PlDatabase
 {
 	[CmdletBinding()]
@@ -113,7 +183,11 @@ function Get-PlDatabaseRow
 	(
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[string[]]$Column,
+		[string]$Column,
+		
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string]$Value,
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
@@ -132,7 +206,7 @@ function Get-PlDatabaseRow
 				'ServerInstance' = $Instance
 			}
 			if ($PSBoundParameters.ContainsKey('Column')) {
-				$sqlParams.Query = "SELECT $($Column -join ',') FROM $Table"
+				$sqlParams.Query = "SELECT * FROM $Table WHERE $Column = '$Value'"
 			}
 			else
 			{
