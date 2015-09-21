@@ -68,47 +68,48 @@ function New-PlDatabase
 	{
 		try
 		{
-			
 			$null = [System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SMO')
 			$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $Instance
 			$db = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database($server, $Database)
 			$db.Create()
-						
-			$dtint = [Microsoft.SqlServer.Management.Smo.Datatype]::Int
-			$dtvchar100 = [Microsoft.SqlServer.Management.Smo.Datatype]::NVarChar(100)
-			$dtdatetm = [Microsoft.SqlServer.Management.Smo.Datatype]::DateTime
-						
-			$tbl = New-Object ('Microsoft.SqlServer.Management.Smo.Table') ($Database, $Table, 'dbo')
-						
-			#Create the ID column
-			$clId = new-object ('Microsoft.SqlServer.Management.Smo.Column') ($tbl, 'ID', $dtint)
-			$clId.Identity = $true
-			$clId.IdentitySeed = 1
-			$clId.IdentityIncrement = 1
-			$tbl.Columns.Add($clId)
 			
-			$cols = @(
-			@{ 'Name' = 'Name'; 'Type' = $dtvchar100 }
-			@{ 'Name' = 'OperatingSystem'; 'Type' = $dtvchar100 }
-			@{ 'Name' = 'Group'; 'Type' = $dtvchar100 }
-			@{ 'Name' = 'DeployedOn'; 'Type' = $dtdatetm }
-			)
-			foreach ($c in $cols)
-			{
-				$col = new-object ('Microsoft.SqlServer.Management.Smo.Column') ($tbl, $c.Name, $c.Type)
-				$col.Nullable = $false
-				$tbl.Columns.Add($col)
+			$typeConversions = @{
+				'int' = [Microsoft.SqlServer.Management.Smo.Datatype]::Int
+				'varchar100' = [Microsoft.SqlServer.Management.Smo.Datatype]::NVarChar(100)
+				'datetime' = [Microsoft.SqlServer.Management.Smo.Datatype]::DateTime
 			}
 			
-			$pk = new-object ('Microsoft.SqlServer.Management.Smo.Index') ($tbl, "PK_$($Project.Name)")
-			$pk.IndexKeyType = 'DriPrimaryKey'
-			$pk.IsClustered = $true
-			$indexCol = new-object ('Microsoft.SqlServer.Management.Smo.IndexedColumn') ($pk, 'ID')
-			$pk.IndexedColumns.Add($indexCol)
-			$tbl.Indexes.Add($pk)
-						
-			#Create the table
-			$tbl.Create()
+			foreach ($t in $Table)
+			{
+				Write-Verbose -Message "Creating table [$($t.Name)] in database [$($Database)]"
+				$tbl = New-Object ('Microsoft.SqlServer.Management.Smo.Table') ($db, $t.Name, 'dbo')
+				$t.Columns.Column | foreach {
+					$col = new-object ('Microsoft.SqlServer.Management.Smo.Column') ($tbl, $_.Name, $typeConversions[$_.Type])
+					if ($_.PrimaryKey -eq 'Yes')
+					{
+						$col.Identity = $true
+						$col.IdentitySeed = 1
+						$col.IdentityIncrement = 1
+					}
+					else
+					{
+						$col.Nullable = $false
+					}
+					
+					$tbl.Columns.Add($col)
+				}
+				$pk = new-object ('Microsoft.SqlServer.Management.Smo.Index') ($tbl, "PK_$Database")
+				$pk.IndexKeyType = 'DriPrimaryKey'
+				$pk.IsClustered = $true
+				
+				$idxColName = ($t.Columns.Column | where { $_.Index -eq 'yes' }).Name
+				$indexCol = new-object ('Microsoft.SqlServer.Management.Smo.IndexedColumn') ($pk, $idxColName)
+				$pk.IndexedColumns.Add($indexCol)
+				$tbl.Indexes.Add($pk)
+				
+				#Create the table
+				$tbl.Create()
+			}
 		}
 		catch
 		{
