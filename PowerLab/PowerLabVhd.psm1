@@ -26,7 +26,13 @@ function Add-OperatingSystem
 				throw "There is already a VHD called [$($vhdName)]"	
 			}
 			$vhd = New-PlVhd -Name $vhdName -OperatingSystem $OperatingSystem
-			Add-VMHardDiskDrive -ComputerName $hostserver.Name -Path $vhd.ImagePath -VMName $InputObject.Name
+			$InputObject | Add-VMHardDiskDrive -ComputerName $hostserver.Name -Path $vhd.ImagePath
+			
+			$bootOrder = ($InputObject | Get-VMFirmware).Bootorder
+			if ($bootOrder[0].BootType -ne 'Drive')
+			{
+				$InputObject | Set-VMFirmware -FirstBootDevice $InputObject.HardDrives[0]
+			}
 		}
 		catch
 		{
