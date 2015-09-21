@@ -106,6 +106,47 @@ function Test-PlDatabase
 	}
 }
 
+function Get-PlDatabaseRow
+{
+	[CmdletBinding()]
+	param
+	(
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string[]]$Column,
+		
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string]$Table = 'VMs'
+	)
+	begin
+	{
+		$ErrorActionPreference = 'Stop'
+	}
+	process
+	{
+		try
+		{
+			$sqlParams = @{
+				'Database' = $Database
+				'ServerInstance' = $Instance
+			}
+			if ($PSBoundParameters.ContainsKey('Column')) {
+				$sqlParams.Query = "SELECT $($Column -join ',') FROM $Table"
+			}
+			else
+			{
+				$sqlParams.Query = "SELECT * FROM $Table"	
+			}
+			Invoke-Sqlcmd @sqlParams
+		}
+		catch
+		{
+			Write-Error $_.Exception.Message
+		}
+	}
+}
+
 function New-PlDatabaseRow
 {
 	[CmdletBinding()]
@@ -135,7 +176,7 @@ function New-PlDatabaseRow
 			$sqlParams = @{
 				'Database' = $Database
 				'ServerInstance' = $Instance
-				'Query' = "INSERT INTO $Table ($($Column -join ',')) VALUES ('$($Value -join ',')')"
+				'Query' = "INSERT INTO $Table ($($Column -join ',')) VALUES ('$($Value -join "','")')"
 			}
 			Invoke-Sqlcmd @sqlParams
 		}
