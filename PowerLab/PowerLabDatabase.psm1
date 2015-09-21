@@ -35,7 +35,7 @@ function Add-PlVmDatabaseEntry
 			$cols = 'Name', 'VMGroup', 'CreationDate', 'LastAction'
 			$vals = $Name, $VMGroup, $CreationDate, $LastAction
 			if ($PSBoundParameters.ContainsKey('OperatingSystem')) {
-				$cols += 'OperatinSystem'
+				$cols += 'OperatingSystem'
 				$vals += $OperatingSystem
 			}
 			$params = @{
