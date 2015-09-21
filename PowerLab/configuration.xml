@@ -11,14 +11,7 @@
 						<Column Name="OperatingSystem" Type="varchar100"/>
 						<Column Name="VMGroup" Type="varchar100" />
 						<Column Name="CreationDate" Type="datetime" />
-					</Columns>
-				</Table>
-				<Table Name="Activity">
-					<Columns>
-						<Column Name="ActivityID" PrimaryKey="Yes" Index="Yes" Type="int" />
-						<Column Name="VMName" Type="varchar100"/>
-						<Column Name="Action" Type="varchar100"/>
-						<Column Name="Date" Type="datetime" />
+						<Column Name="LastAction" Type="varchar100" />
 					</Columns>
 				</Table>
 			</Tables>
