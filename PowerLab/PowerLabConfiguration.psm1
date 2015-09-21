@@ -349,7 +349,7 @@ function Get-PlConfigurationData
 		try
 		{
 			$xConfig = [xml](Get-Content -Path (Get-PlConfigurationFile).FullName)
-			$xConfig = $xConfig.($Project.Name)
+			$xConfig = $xConfig.PowerLab
 			if ($PSBoundParameters.ContainsKey('VM'))
 			{
 				$xConfig.VirtualMachines.VM | where { $_.Name -in $VM }
