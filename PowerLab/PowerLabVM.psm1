@@ -80,6 +80,7 @@ function New-PlVm
 				'Generation' = $Generation
 			}
 			New-VM @vmParams
+			Add-PlVmDatabaseEntry -Name $Name -CreationDate (Get-Date).ToString()
 		}
 		catch
 		{
