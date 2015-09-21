@@ -12,11 +12,11 @@ function Add-PlVmDatabaseEntry
 		
 		[Parameter(Mandatory)]
 		[ValidateNotNullOrEmpty()]
-		[string]$OperatingSystem,
-		
-		[Parameter(Mandatory)]
-		[ValidateNotNullOrEmpty()]
 		[datetime]$CreationDate,
+	
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string]$OperatingSystem,
 	
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
