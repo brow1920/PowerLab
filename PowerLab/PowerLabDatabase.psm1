@@ -49,7 +49,7 @@ function New-PlDatabase
 					}
 					else
 					{
-						$col.Nullable = $false
+						$col.Nullable = $true
 					}
 					
 					$tbl.Columns.Add($col)
@@ -106,12 +106,67 @@ function Test-PlDatabase
 	}
 }
 
+function New-PlDatabaseRow
+{
+	[CmdletBinding()]
+	param
+	(
+		
+		[Parameter(Mandatory)]
+		[ValidateNotNullOrEmpty()]
+		[string[]]$Column,
+		
+		[Parameter(Mandatory)]
+		[ValidateNotNullOrEmpty()]
+		[string[]]$Value,
+		
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string]$Table = 'VMs'
+	)
+	begin
+	{
+		$ErrorActionPreference = 'Stop'
+	}
+	process
+	{
+		try
+		{
+			$sqlParams = @{
+				'Database' = $Database
+				'ServerInstance' = $Instance
+				'Query' = "INSERT INTO $Table ($($Column -join ',')) VALUES ('$($Value -join ',')')"
+			}
+			Invoke-Sqlcmd @sqlParams
+		}
+		catch
+		{
+			Write-Error $_.Exception.Message
+		}
+	}
+}
+
 function Update-PlDatabaseRow
 {
 	[CmdletBinding()]
 	param
 	(
-			
+		
+		[Parameter(Mandatory)]
+		[ValidateNotNullOrEmpty()]
+		[int]$VMId,
+	
+		[Parameter(Mandatory)]
+		[ValidateNotNullOrEmpty()]
+		[string]$Column,
+	
+		[Parameter(Mandatory)]
+		[ValidateNotNullOrEmpty()]
+		[string]$Value,
+		
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string]$Table = 'VMs'
 	)
 	begin {
 		$ErrorActionPreference = 'Stop'
@@ -119,7 +174,13 @@ function Update-PlDatabaseRow
 	process {
 		try
 		{
-			Invoke-Sqlcmd -Query "SELECT GETDATE() AS TimeOfQuery;" -ServerInstance "MyComputer\MyInstance"
+			$vmIdColName = ((Get-PlConfigurationData).Configuration.Database.SelectSingleNode("//Table[@Name='$Table']").Columns.Column | where { $_.PrimaryKey -eq 'Yes' }).Name
+			$sqlParams = @{
+				'Database' = $Database
+				'ServerInstance' = $Instance
+				'Query' = "UPDATE $Table SET $Column='$Value' WHERE $vmIdColName=$VMId"
+			}
+			Invoke-Sqlcmd @sqlParams
 		}
 		catch
 		{
