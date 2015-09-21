@@ -199,12 +199,8 @@ function Update-PlDatabaseRow
 	
 		[Parameter(Mandatory)]
 		[ValidateNotNullOrEmpty()]
-		[string]$Column,
-	
-		[Parameter(Mandatory)]
-		[ValidateNotNullOrEmpty()]
-		[string]$Value,
-		
+		[hashtable[]]$Row,
+
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
 		[string]$Table = 'VMs'
@@ -216,11 +212,20 @@ function Update-PlDatabaseRow
 		try
 		{
 			$vmIdColName = ((Get-PlConfigurationData).Configuration.Database.SelectSingleNode("//Table[@Name='$Table']").Columns.Column | where { $_.PrimaryKey -eq 'Yes' }).Name
+			
+			$keyPairs = @()
+			$Row | foreach {
+				$_.GetEnumerator() | foreach {
+					$keyPairs += "$($_.Key) = '$($_.Value)'"
+				}
+			}
+			
 			$sqlParams = @{
 				'Database' = $Database
 				'ServerInstance' = $Instance
-				'Query' = "UPDATE $Table SET $Column='$Value' WHERE $vmIdColName=$VMId"
+				'Query' = "UPDATE $Table SET $($keyPairs -join ',') WHERE $vmIdColName=$VMId"
 			}
+			Write-Verbose -Message "UPDATE $Table SET $($keyPairs -join ',') WHERE $vmIdColName=$VMId"
 			Invoke-Sqlcmd @sqlParams
 		}
 		catch
