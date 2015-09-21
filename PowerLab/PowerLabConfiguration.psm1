@@ -1,9 +1,3 @@
-## The registry key path to where various configuration values are stored
-$RegistryKeyConfigPath = "HKLM:\Software\$($Project.Name)"
-
-## The registry value name that contains the file path to the configuration file
-$RegistryConfigValue = 'Configuration'
-
 function ConvertTo-UncPath
 {
 	<#
@@ -511,6 +505,11 @@ function Get-PlConfigurationFile
 	{
 		try
 		{
+			## The registry key path to where various configuration values are stored
+			$RegistryKeyConfigPath = "HKLM:\Software\PowerLab"
+			
+			## The registry value name that contains the file path to the configuration file
+			$RegistryConfigValue = 'Configuration'
 			Write-Verbose -Message "Finding value of [$($RegistryConfigValue)] at path [$($RegistryKeyConfigPath)]"
 			$path = (Get-ItemProperty -Path $RegistryKeyConfigPath -Name $RegistryConfigValue).$RegistryConfigValue
 			Get-Item -Path $path
