@@ -62,6 +62,10 @@ function New-PlDatabase
 	{
 		try
 		{
+			if (Test-PlDatabase -Database $Database -Instance $Instance)
+			{
+				throw "The database [$($Database)] already exists"	
+			}
 			$null = [System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SMO')
 			$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $Instance
 			$db = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database($server, $Database)
