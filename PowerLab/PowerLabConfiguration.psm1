@@ -257,11 +257,11 @@ function Test-PlDatabase
 	(
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[string]$Instance = '.',
+		[string]$Instance = (Get-PlConfigurationData).Configuration.Database.Instance.Name,
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[string]$Database = $Project.Name
+		[string]$Database = (Get-PlConfigurationData).Configuration.Database.Name
 	)
 	begin {
 		$ErrorActionPreference = 'Stop'
