@@ -79,8 +79,9 @@ function New-PlVm
 				'Switch' = $Switch
 				'Generation' = $Generation
 			}
-			New-VM @vmParams
+			$vm = New-VM @vmParams
 			Add-PlVmDatabaseEntry -Name $Name -CreationDate (Get-Date).ToString()
+			$vm
 		}
 		catch
 		{

@@ -34,6 +34,7 @@ function Add-OperatingSystem
 				$InputObject | Set-VMFirmware -FirstBootDevice $InputObject.HardDrives[0]
 			}
 			$vmId = (Get-PlDatabaseRow -Table VMs -Column Name -Value $InputObject.Name).VMID
+			Write-Verbose -Message "Updating VM DB entry at ID [$($vmId)] for VM [$($InputObject.Name)] with operating system [$($OperatingSystem)]"
 			Update-PlDatabaseRow -VMId $vmId -Row @{ 'OperatingSystem' = $OperatingSystem }
 		}
 		catch
