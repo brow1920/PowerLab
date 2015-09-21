@@ -26,7 +26,7 @@ function Add-OperatingSystem
 				throw "There is already a VHD called [$($vhdName)]"	
 			}
 			$vhd = New-PlVhd -Name $vhdName -OperatingSystem $OperatingSystem
-			Add-VMHardDiskDrive -ComputerName $hostserver.Name -Path $vhd.Path -VMName $InputObject.Name
+			Add-VMHardDiskDrive -ComputerName $hostserver.Name -Path $vhd.ImagePath -VMName $InputObject.Name
 		}
 		catch
 		{
@@ -98,10 +98,10 @@ function ConvertTo-VirtualDisk
 					VHDType = $using:Sizing
 					VHDPartitionStyle = $using:VHDPartitionStyle
 				}
-				if ($PSBoundParameters.ContainsKey('AnswerFilePath')) {
+				if (($using:PSBoundParameters).ContainsKey('AnswerFilePath')) {
 					$convertParams.UnattendPath = $using:AnswerFilePath
 				}
-				if ($PassThru.IsPresent)
+				if ($using:PassThru.IsPresent)
 				{
 					$convertParams.PassThru = $true	
 				}
