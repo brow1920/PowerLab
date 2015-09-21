@@ -10,7 +10,7 @@ function Add-OperatingSystem
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
 		[ValidateSet('Windows Server 2012 R2 (x64)')]
-		[string]$OperatingSystem
+		[string]$OperatingSystem = (Get-PlDefaultVMConfig).OS.Name
 		
 	)
 	begin {
@@ -33,6 +33,8 @@ function Add-OperatingSystem
 			{
 				$InputObject | Set-VMFirmware -FirstBootDevice $InputObject.HardDrives[0]
 			}
+			$vmId = (Get-PlDatabaseRow -Table VMs -Column Name -Value $InputObject.Name).VMID
+			Update-PlDatabaseRow -VMId $vmId -Row @{ 'OperatingSystem' = $OperatingSystem }
 		}
 		catch
 		{

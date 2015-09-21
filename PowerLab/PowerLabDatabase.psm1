@@ -81,6 +81,43 @@ function Get-PlVMDatabaseEntry
 	}
 }
 
+function Get-PlVMDatabaseEntry
+{
+	[CmdletBinding()]
+	param
+	(
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string]$Name
+	)
+	begin
+	{
+		$ErrorActionPreference = 'Stop'
+	}
+	process
+	{
+		try
+		{
+			if ($PSBoundParameters.ContainsKey('Name'))
+			{
+				Get-PlDatabaseRow -Table 'VMs' -Column 'Name' -Value $Name
+			}
+			else
+			{
+				Get-PlDatabaseRow -Table 'VMs'
+				
+				
+				
+				
+			}
+		}
+		catch
+		{
+			Write-Error $_.Exception.Message
+		}
+	}
+}
+
 function New-PlDatabase
 {
 	[CmdletBinding()]
@@ -261,6 +298,45 @@ function New-PlDatabaseRow
 				'Database' = $Database
 				'ServerInstance' = $Instance
 				'Query' = "INSERT INTO $Table ($($Column -join ',')) VALUES ('$($Value -join "','")')"
+			}
+			Invoke-Sqlcmd @sqlParams
+		}
+		catch
+		{
+			Write-Error $_.Exception.Message
+		}
+	}
+}
+
+function Remove-PlDatabaseRow
+{
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory)]
+		[ValidateNotNullOrEmpty()]
+		[string]$Table,
+		
+		[Parameter(Mandatory)]
+		[ValidateNotNullOrEmpty()]
+		[string]$Column,
+		
+		[Parameter(Mandatory)]
+		[ValidateNotNullOrEmpty()]
+		[string]$Value
+	)
+	begin
+	{
+		$ErrorActionPreference = 'Stop'
+	}
+	process
+	{
+		try
+		{
+			$sqlParams = @{
+				'Database' = $Database
+				'ServerInstance' = $Instance
+				'Query' = "DELETE FROM $Table WHERE $Column = '$Value'"
 			}
 			Invoke-Sqlcmd @sqlParams
 		}
