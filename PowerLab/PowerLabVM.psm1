@@ -152,7 +152,7 @@ function Remove-PlVM
 	(
 		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]
 		[ValidateNotNullOrEmpty()]
-		[string[]]$Name,
+		[string]$Name,
 	
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
@@ -187,6 +187,8 @@ function Remove-PlVM
 					Get-PlVhd -Path $diskPath | Remove-PlVhd
 				}
 			}
+			
+			Remove-PlDatabaseRow -Table VMs -Column Name -Value $Name
 		}
 		catch
 		{
