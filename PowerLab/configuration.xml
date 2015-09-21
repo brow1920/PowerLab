@@ -6,7 +6,7 @@
 			<Tables>
 				<Table Name="VMs">
 					<Columns>
-						<Column Name="ID" PrimaryKey="Yes" Type="int" />
+						<Column Name="ID" PrimaryKey="Yes" Index="Yes" Type="int" />
 						<Column Name="Name" Type="varchar100"/>
 						<Column Name="OperatingSystem" Type="varchar100"/>
 						<Column Name="VMGroup" Type="varchar100" />
@@ -15,7 +15,7 @@
 				</Table>
 				<Table Name="Activity">
 					<Columns>
-						<Column Name="ID" PrimaryKey="Yes" Type="int" />
+						<Column Name="ID" PrimaryKey="Yes" Index="Yes" Type="int" />
 						<Column Name="VMName" Type="varchar100"/>
 						<Column Name="Action" Type="varchar100"/>
 						<Column Name="Date" Type="datetime" />
