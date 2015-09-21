@@ -1,3 +1,6 @@
+$global:Database = (Get-PlConfigurationData).Configuration.Database.Name
+$global:Instance = (Get-PlConfigurationData).Configuration.Database.Instance.Name
+
 function New-PlDatabase
 {
 	[CmdletBinding()]
@@ -5,17 +8,7 @@ function New-PlDatabase
 	(
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[string]$Instance = (Get-PlDefaultDatabaseConfig).Instance.Name,
-		
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
-		[string]$Database = (Get-PlDefaultDatabaseConfig).Name,
-		
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
-		[System.Xml.XmlElement[]]$Table = (Get-PlDefaultDatabaseConfig).Tables.Table
-		
-		
+		[System.Xml.XmlElement[]]$Table = (Get-PlDefaultDatabaseConfig).Tables.Table	
 	)
 	begin
 	{
@@ -86,15 +79,7 @@ function Test-PlDatabase
 {
 	[CmdletBinding()]
 	param
-	(
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
-		[string]$Instance = (Get-PlConfigurationData).Configuration.Database.Instance.Name,
-		
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
-		[string]$Database = (Get-PlConfigurationData).Configuration.Database.Name
-	)
+	()
 	begin
 	{
 		$ErrorActionPreference = 'Stop'
@@ -113,6 +98,28 @@ function Test-PlDatabase
 			{
 				$true
 			}
+		}
+		catch
+		{
+			Write-Error $_.Exception.Message
+		}
+	}
+}
+
+function Update-PlDatabaseRow
+{
+	[CmdletBinding()]
+	param
+	(
+			
+	)
+	begin {
+		$ErrorActionPreference = 'Stop'
+	}
+	process {
+		try
+		{
+			Invoke-Sqlcmd -Query "SELECT GETDATE() AS TimeOfQuery;" -ServerInstance "MyComputer\MyInstance"
 		}
 		catch
 		{
