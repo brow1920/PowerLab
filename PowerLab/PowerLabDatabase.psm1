@@ -61,8 +61,12 @@ function Get-PlVMDatabaseEntry
 		try
 		{
 			if ($PSBoundParameters.ContainsKey('Name')) {
-				Get-PlDatabaseRow -Column
-			}		
+				Get-PlDatabaseRow -Table 'VMs' -Column 'Name' -Value $Name
+			}
+			else
+			{
+				Get-PlDatabaseRow -Table 'VMs'
+			}
 		}
 		catch
 		{
@@ -181,17 +185,17 @@ function Get-PlDatabaseRow
 	[CmdletBinding()]
 	param
 	(
+		[Parameter(Mandatory)]
+		[ValidateNotNullOrEmpty()]
+		[string]$Table,
+		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
 		[string]$Column,
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[string]$Value,
-		
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
-		[string]$Table = 'VMs'
+		[string]$Value
 	)
 	begin
 	{
