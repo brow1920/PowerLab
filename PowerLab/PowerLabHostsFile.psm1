@@ -42,6 +42,12 @@ function Add-PlHostEntry
 				$vals += "# $Comment"
 			}
 			
+			$hostsFilePath = "$env:SystemRoot\System32\drivers\etc\hosts"
+			## If the hosts file doesn't end with a blank line, make it so
+			if ((Get-Content -Path $hostsFilePath -Raw) -notmatch '\n$')
+			{
+				Add-Content -Path $hostsFilePath -Value ''
+			}
 			Add-Content -Path $HostFilePath -Value ($vals -join "`t")
 		}
 		catch
