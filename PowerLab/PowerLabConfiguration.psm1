@@ -231,7 +231,7 @@ function Get-PlConfigurationData
 	{
 		try
 		{
-			$xConfig = [xml](Get-Content -Path (Get-PlConfigurationFile).FullName)
+			$xConfig = [xml](Get-Content -Path $ConfigFilePath)
 			$xConfig = $xConfig.PowerLab
 			if ($PSBoundParameters.ContainsKey('VM'))
 			{
@@ -366,36 +366,6 @@ function Get-PlConfigurationFolder
 			{
 				(Get-PlConfigurationData).Configuration.Folders.SelectNodes("//Folder")
 			}
-		}
-		catch
-		{
-			Write-Error $_.Exception.Message
-		}
-	}
-}
-
-function Get-PlConfigurationFile
-{
-	[CmdletBinding()]
-	[OutputType([System.IO.FileInfo])]
-	param
-	()
-	begin
-	{
-		$ErrorActionPreference = 'Stop'
-	}
-	process
-	{
-		try
-		{
-			## The registry key path to where various configuration values are stored
-			$RegistryKeyConfigPath = "HKLM:\Software\PowerLab"
-			
-			## The registry value name that contains the file path to the configuration file
-			$RegistryConfigValue = 'Configuration'
-			Write-Verbose -Message "Finding value of [$($RegistryConfigValue)] at path [$($RegistryKeyConfigPath)]"
-			$path = (Get-ItemProperty -Path $RegistryKeyConfigPath -Name $RegistryConfigValue).$RegistryConfigValue
-			Get-Item -Path $path
 		}
 		catch
 		{
@@ -678,44 +648,6 @@ function New-PlConfigurationFile
 		[System.XML.XMLElement]$xmlRoot = $xmlDoc.CreateElement($Project.Name)
 		$null = $xmlDoc.AppendChild($xmlRoot)
 		$xmlDoc.Save($FilePath)
-	}
-}
-
-function New-PlConfigurationRegistry
-{
-	[CmdletBinding()]
-	param
-	(
-		[Parameter(Mandatory)]
-		[ValidateNotNullOrEmpty()]
-		[string]$ConfigFilePath
-			
-	)
-	begin {
-		$ErrorActionPreference = 'Stop'
-	}
-	process {
-		try
-		{
-			if (-not (Test-Path -Path $RegistryKeyConfigPath))
-			{
-				Write-Verbose -Message "Creating the registry key [$($Project.Name)] at in key path [$($RegistryKeyConfigPath | Split-Path -Parent))]"
-				$null = New-Item -Path ($RegistryKeyConfigPath | Split-Path -Parent) -Name $Project.Name
-			}
-			if (-not (Get-ItemProperty $RegistryKeyConfigPath -Name $RegistryConfigValue -ea SilentlyContinue))
-			{
-				Write-Verbose -Message "Creating the registry value [$($RegistryConfigValue)]"
-				$null = New-ItemProperty -Path $RegistryKeyConfigPath -Name $RegistryConfigValue -Value $ConfigFilePath -Force
-			}
-			if ($PassThru.IsPresent)
-			{
-				[xml](Get-Content -Path $ConfigFilePath)
-			}
-		}
-		catch
-		{
-			Write-Error $_.Exception.Message
-		}
 	}
 }
 

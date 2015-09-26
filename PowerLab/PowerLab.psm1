@@ -1,11 +1,18 @@
-#requires -version 4
-
 #region Configuration
 Set-StrictMode -Version Latest
 
-$script:Project = [pscustomobject]@{'Name' = 'PowerLab'}
+$script:Project = [pscustomobject]@{ 'Name' = 'PowerLab' }
 
-$global:HostServer = Get-PlHostServerConfiguration
+$global:ConfigFilePath = "$PSScriptRoot\configuration.xml"
+$HostServerCredFile = "$PSScriptRoot\HostServerCred.xml"
+
+$xConfig = [xml](Get-Content -Path $ConfigFilePath)
+$xConfig = $xConfig.PowerLab
+
+$global:HostServer = [pscustomobject]@{
+	'Name' = $xConfig.HostServer
+	'Credential' = Import-Clixml -Path $HostServerCredFile
+}
 #endregion
 
 function New-PlHost
@@ -43,10 +50,6 @@ function New-PowerLab
 	try
 	{	
 		
-#		#region Registry configuration
-#		New-PlConfigurationRegistry -ConfigFilePath (Get-PlConfigurationFile).FullName
-#		#endregion
-#		
 #		#region Setup default database
 #		if (-not (Test-PlDatabase))
 #		{
