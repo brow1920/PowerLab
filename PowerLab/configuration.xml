@@ -20,7 +20,7 @@
 			<!-- This is the base folder that will be created on the host server that will contains all files needed -->
 			<Folder Name="PowerLabRoot" Location="HostServer" Required="No" Path="C:\Lab"/>
 			<!-- This is the folder on your local machine that has ISOs for all OSes you will be using -->
-			<Folder Name="ISO" Location="Local" ToCopyToHostServer="Yes" Required="Yes" Path="C:\Dropbox\Powershell\GitRepos\PowerLab\ISOs"/>
+			<Folder Name="ISO" Location="Local" ToCopyToHostServer="Yes" Required="Yes" Path="C:\Lab\ISOs"/>
 			<Folder Name="ISO" Location="HostServer" ToCopyToHostServer="No" Required="No" Path="C:\Lab\ISOs" />
 			<!-- This is the folder on your local machine that has all of the autounattend XML files for VM OS installation -->
 			<Folder Name="UnattendXml" Location="Local" ToCopyToHostServer="Yes" Required="Yes" Path="C:\Dropbox\Powershell\GitRepos\PowerLab\AutoUnattend"/>
