@@ -756,34 +756,34 @@ function Set-WorkgroupConnectivity
 	process {
 		try
 		{
-			$hostServer = Get-PlHostServerConfiguration
+			$hostServerConfig = Get-PlHostServerConfiguration
 			#region Add the host server hostname to local hosts file
-			if (-not (Get-PlHostEntry | where { $_.HostName -eq $hostServer.Name -and $_.IPAddress -eq $hostServer.IPAddress }))
+			if (-not (Get-PlHostEntry | where { $_.HostName -eq $hostServerConfig.Name -and $_.IPAddress -eq $hostServerConfig.IPAddress }))
 			{
-				Write-Verbose -Message "Host file entry for [$($hostServer.Name)] doesn't exist. Adding..."
-				Add-PlHostEntry -HostName $hostServer.Name -IpAddress $hostserver.IPAddress
+				Write-Verbose -Message "Host file entry for [$($hostServerConfig.Name)] doesn't exist. Adding..."
+				Add-PlHostEntry -HostName $hostServerConfig.Name -IpAddress $hostServerConfig.IPAddress
 			}
 			else
 			{
-				Write-Verbose -Message "The host file entry for [$($hostServer.Name)] already exists."	
+				Write-Verbose -Message "The host file entry for [$($hostServerConfig.Name)] already exists."	
 			}
 			#endregion
 			
 			#region Add the host server to the trusted hosts
-			Add-TrustedHostComputer -ComputerName $hostServer.Name
+			Add-TrustedHostComputer -ComputerName $hostServerConfig.Name
 			#endregion
 			
 			#region Enable remoting on the host server
-			if (-not (Test-PsRemoting -computername $hostServer.Name -Credential $hostServer.Credential))
+			if (-not (Test-PsRemoting -computername $hostServerConfig.Name -Credential $hostServerConfig.Credential))
 			{
 				$wmiParams = @{
-					'ComputerName' = $hostServer.Name
-					'Credential' = $hostServer.Credential
+					'ComputerName' = $hostServerConfig.Name
+					'Credential' = $hostServerConfig.Credential
 					'Class' = 'Win32_Process'
 					'Name' = 'Create'
 					'Args' = 'c:\windows\system32\winrm.cmd quickconfig -quiet'
 				}
-				Write-Verbose -Message "PS remoting is not enabled. Enabling PS remoting on [$($hostServer.Name)]"
+				Write-Verbose -Message "PS remoting is not enabled. Enabling PS remoting on [$($hostServerConfig.Name)]"
 				$process = Invoke-WmiMethod @wmiParams
 				if ($process.ReturnValue -ne 0)
 				{
@@ -796,7 +796,7 @@ function Set-WorkgroupConnectivity
 			}
 			else
 			{
-				Write-Verbose -Message "PS remoting is already enabled on [$($hostServer.Name)]"	
+				Write-Verbose -Message "PS remoting is already enabled on [$($hostServerConfig.Name)]"	
 			}
 			#endregion
 			
@@ -807,8 +807,8 @@ function Set-WorkgroupConnectivity
 				Enable-NetFirewallRule -DisplayGroup 'Remote Volume Management'
 				Set-Service VDS -StartupType Automatic
 			}
-			Write-Verbose -Message "Adding necessary firewall rules to [$($HostServer.Name)]"
-			Invoke-Command -ComputerName $hostServer.Name -Credential $hostServer.Credential -ScriptBlock $sb
+			Write-Verbose -Message "Adding necessary firewall rules to [$($hostServerConfig.Name)]"
+			Invoke-Command -ComputerName $hostServerConfig.Name -Credential $hostServerConfig.Credential -ScriptBlock $sb
 			
 			#region Allow anonymous DCOM connections
 			Write-Verbose -Message 'Adding the ANONYMOUS LOGON user to the Distributed COM Users group for Hyper-V manager'
@@ -823,7 +823,7 @@ function Set-WorkgroupConnectivity
 					$group.add("WinNT://./NT AUTHORITY\ANONYMOUS LOGON")
 				}
 			}
-			Invoke-Command -ComputerName $hostServer.Name -Credential $hostServer.Credential -ScriptBlock $sb
+			Invoke-Command -ComputerName $hostServerConfig.Name -Credential $hostServerConfig.Credential -ScriptBlock $sb
 			#endregion
 			#endregion
 			
