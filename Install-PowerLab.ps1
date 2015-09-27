@@ -52,7 +52,7 @@ try {
 	Copy-Item -Path $ModulesPath -Destination $userModulePath -Recurse -Force
 	#endregion
 	
-	#Import-Module PowerLab
+	Import-Module PowerLab
 }
 catch
 {

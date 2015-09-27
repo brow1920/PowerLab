@@ -48,14 +48,16 @@ function New-PowerLab
 		[switch]$WinRmCopy
 	)
 	try
-	{	
+	{
 		
-#		#region Setup default database
-#		if (-not (Test-PlDatabase))
-#		{
-#			New-PlDatabase
-#		}
-#		#endregion
+		#region Install SQL Server Express
+		
+		
+		#endregion
+		
+		#region Setup default database
+		New-PlDatabase
+		#endregion
 #		
 #		#region Install RSAT
 #		if (Test-ClientOperatingSystem)
@@ -109,23 +111,23 @@ function New-PowerLab
 #		New-PlSwitch
 		
 		#region Create VMs
-		foreach ($vm in (Get-PlVMConfiguration))
-		{
-			$params = @{}
-			if ($vm.UseDefaultConfig)
-			{
-				$params.Name = $vm.Name
-			}
-			else
-			{
-				##TODO	
-			}
-			if ($vm.InstallOS)
-			{
-				
-			}
-			New-PlVm @params
-		}
+#		foreach ($vm in (Get-PlVMConfiguration))
+#		{
+#			$params = @{}
+#			if ($vm.UseDefaultConfig)
+#			{
+#				$params.Name = $vm.Name
+#			}
+#			else
+#			{
+#				##TODO	
+#			}
+#			if ($vm.InstallOS)
+#			{
+#				
+#			}
+#			New-PlVm @params
+#		}
 		#endregion
 	}
 	catch
