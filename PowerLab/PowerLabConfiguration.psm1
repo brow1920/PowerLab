@@ -808,7 +808,7 @@ function Set-WorkgroupConnectivity
 			}
 			#endregion
 			
-			#region Configure settings to allow for remote Hyper-V manager
+			#region Enable host server firewall ruls remote Hyper-V manager
 			$sb = {
 				Enable-NetFirewallRule -DisplayGroup 'Windows Remote Management'
 				Enable-NetFirewallRule -DisplayGroup 'Remote Event Log Management'
@@ -817,9 +817,10 @@ function Set-WorkgroupConnectivity
 			}
 			Write-Verbose -Message "Adding necessary firewall rules to [$($hostServerConfig.Name)]"
 			Invoke-Command -ComputerName $hostServerConfig.Name -Credential $hostServerConfig.Credential -ScriptBlock $sb
+			#endregion
 			
 			#region Allow anonymous DCOM connections
-			Write-Verbose -Message 'Adding the ANONYMOUS LOGON user to the Distributed COM Users group for Hyper-V manager'
+			Write-Verbose -Message 'Adding the ANONYMOUS LOGON user to the local and host server Distributed COM Users group for Hyper-V manager'
 			$sb = {
 				$group = [ADSI]"WinNT://./Distributed COM Users"
 				$members = @($group.Invoke("Members")) | foreach {
@@ -832,7 +833,7 @@ function Set-WorkgroupConnectivity
 				}
 			}
 			Invoke-Command -ComputerName $hostServerConfig.Name -Credential $hostServerConfig.Credential -ScriptBlock $sb
-			#endregion
+			& $sb
 			#endregion
 			
 			Enable-NetFirewallRule -DisplayGroup 'Remote Volume Management'
