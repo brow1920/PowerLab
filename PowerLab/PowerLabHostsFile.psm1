@@ -93,7 +93,7 @@ function Get-PlHostEntry
 					$null = $_ -match $regex
 					if ($matches)
 					{
-						[pscustomobject]@{
+						@{
 							'IPAddress' = $matches.ipAddress
 							'HostName' = $matches.hostname
 							'Comment' = $matches.comment
@@ -118,7 +118,7 @@ function Get-PlHostEntry
 				{
 					$icmParams.Credential = $Credential
 				}
-				Invoke-Command @icmParams
+				[pscustomobject](Invoke-Command @icmParams)
 			}
 		}
 		catch
