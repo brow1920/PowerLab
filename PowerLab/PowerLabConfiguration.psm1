@@ -691,13 +691,18 @@ function Set-WorkgroupConnectivity
 		{
 			param (
 				[Parameter(Mandatory = $true)]
-				$computername
+				$computername,
+			
+				[Parameter(Mandatory)]
+				[ValidateNotNullOrEmpty()]
+				[pscredential]$Credential
+				
 			)
 			
 			try
 			{
 				$errorActionPreference = "Stop"
-				$result = Invoke-Command -ComputerName $computername { 1 }
+				$result = Invoke-Command -ComputerName $computername { 1 } -Credential $Credential
 			}
 			catch
 			{
@@ -747,86 +752,52 @@ function Set-WorkgroupConnectivity
 			}
 		}
 		
-		function Add-ToLocalGroup
-		{
-			[CmdletBinding()]
-			param
-			(
-				[Parameter(Mandatory)]
-				[ValidateNotNullOrEmpty()]
-				[string]$Principal,
-				
-				[Parameter(Mandatory)]
-				[ValidateNotNullOrEmpty()]
-				[string]$GroupName,
-				
-				[Parameter()]
-				[ValidateNotNullOrEmpty()]
-				[string]$ComputerName,
-				
-				[Parameter()]
-				[ValidateNotNullOrEmpty()]
-				[pscredential]$Credential
-				
-			)
-			try
-			{
-				$Principal = $Principal.Replace('\', '/')
-				$scriptBlock = {
-					$group = [ADSI]"WinNT://$using:ComputerName/$using:GroupName,group"
-					$group.add("WinNT://$using:ComputerName/$using:Principal")
-				}
-				
-				$invParams = @{
-					'ComputerName' = $ComputerName
-					'ScriptBlock' = $scriptBlock
-				}
-				
-				if ($PSBoundParameters.ContainsKey('Credential'))
-				{
-					$invParams.Credential = $Credential
-				}
-				Invoke-Command @invParams
-			}
-			catch
-			{
-				Write-Error $_.Exception.Message
-			}
-		}
 	}
 	process {
 		try
-		{	
+		{
+			$hostServer = Get-PlHostServerConfiguration
 			#region Add the host server hostname to local hosts file
 			if (-not (Get-PlHostEntry | where { $_.HostName -eq $hostServer.Name -and $_.IPAddress -eq $hostServer.IPAddress }))
 			{
 				Write-Verbose -Message "Host file entry for [$($hostServer.Name)] doesn't exist. Adding..."
 				Add-PlHostEntry -HostName $hostServer.Name -IpAddress $hostserver.IPAddress
 			}
-			#endregion
-			
-			#region Enable remoting on the host server
-			$cred = Get-PlHostServerCredential
-			$wmiParams = @{
-				'ComputerName' = $hostServer.Name
-				'Credential' = $cred
-				'Class' = 'Win32_Process'
-				'Name' = 'Create'
-				'Args' = "c:\windows\system32\winrm.cmd quickconfig -quiet"
-			}
-			$process = Invoke-WmiMethod @wmiParams
-			if ($process.ReturnValue -ne 0)
-			{
-				throw 'Enabling WinRM on host server failed'
-			}
 			else
 			{
-				Write-Verbose -Message 'Successfully enabled WinRM on host server'	
+				Write-Verbose -Message "The host file entry for [$($hostServer.Name)] already exists."	
 			}
 			#endregion
 			
 			#region Add the host server to the trusted hosts
 			Add-TrustedHostComputer -ComputerName $hostServer.Name
+			#endregion
+			
+			#region Enable remoting on the host server
+			if (-not (Test-PsRemoting -computername $hostServer.Name -Credential $hostServer.Credential))
+			{
+				$wmiParams = @{
+					'ComputerName' = $hostServer.Name
+					'Credential' = $hostServer.Credential
+					'Class' = 'Win32_Process'
+					'Name' = 'Create'
+					'Args' = 'c:\windows\system32\winrm.cmd quickconfig -quiet'
+				}
+				Write-Verbose -Message "PS remoting is not enabled. Enabling PS remoting on [$($hostServer.Name)]"
+				$process = Invoke-WmiMethod @wmiParams
+				if ($process.ReturnValue -ne 0)
+				{
+					throw 'Enabling WinRM on host server failed'
+				}
+				else
+				{
+					Write-Verbose -Message 'Successfully enabled WinRM on host server'
+				}
+			}
+			else
+			{
+				Write-Verbose -Message "PS remoting is already enabled on [$($hostServer.Name)]"	
+			}
 			#endregion
 			
 			#region Configure settings to allow for remote Hyper-V manager
@@ -836,24 +807,23 @@ function Set-WorkgroupConnectivity
 				Enable-NetFirewallRule -DisplayGroup 'Remote Volume Management'
 				Set-Service VDS -StartupType Automatic
 			}
-			Invoke-Command -ComputerName $hostServer.Name -Credential $cred -ScriptBlock $sb
+			Write-Verbose -Message "Adding necessary firewall rules to [$($HostServer.Name)]"
+			Invoke-Command -ComputerName $hostServer.Name -Credential $hostServer.Credential -ScriptBlock $sb
 			
 			#region Allow anonymous DCOM connections
-			$group = [ADSI]"WinNT://$($hostServer.Name)/Distributed COM Users"
-			$members = @($group.Invoke("Members")) | foreach {
-				$_.GetType().InvokeMember("Name", 'GetProperty', $null, $_, $null)
-			}
-			if ($members -notcontains 'ANONYMOUS LOGON')
-			{
-				$grpParams = @{
-					'ComputerName' = $hostServer.Name
-					'Credential' = $cred
-					'GroupName' = 'Distributed COM Users'
-					'Principal' = 'NT AUTHORITY\ANONYMOUS LOGON'
+			Write-Verbose -Message 'Adding the ANONYMOUS LOGON user to the Distributed COM Users group for Hyper-V manager'
+			$sb = {
+				$group = [ADSI]"WinNT://./Distributed COM Users"
+				$members = @($group.Invoke("Members")) | foreach {
+					$_.GetType().InvokeMember('Name', 'GetProperty', $null, $_, $null)
 				}
-				
-				Add-ToLocalGroup @grpParams
+				if ($members -notcontains 'ANONYMOUS LOGON')
+				{
+					$group = [ADSI]"WinNT://./Distributed COM Users,group"
+					$group.add("WinNT://./NT AUTHORITY\ANONYMOUS LOGON")
+				}
 			}
+			Invoke-Command -ComputerName $hostServer.Name -Credential $hostServer.Credential -ScriptBlock $sb
 			#endregion
 			#endregion
 			
