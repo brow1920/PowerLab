@@ -15,12 +15,21 @@ function Add-PlHostEntry
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[string]$ComputerName,
+		[string]$Comment,
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[string]$Comment
-			
+		[string]$ComputerName = $env:COMPUTERNAME,
+		
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[pscredential]$Credential,
+	
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string]$HostFilePath = "$env:SystemRoot\System32\drivers\etc\hosts"
+		
+				
 	)
 	begin {
 		$ErrorActionPreference = 'Stop'
@@ -29,11 +38,21 @@ function Add-PlHostEntry
 		try
 		{
 			$IpAddress = $IpAddress.IPAddressToString
-			if ($result = Get-PlHostEntry | where HostName -EQ $HostName)
+			
+			$getParams = @{ }
+			if ($ComputerName -ne $env:COMPUTERNAME)
+			{
+				$getParams.ComputerName = $ComputerName
+				$getParams.Credential = $Credential
+			}
+			
+			$existingHostEntries = Get-PlHostEntry @getParams
+			
+			if ($result = $existingHostEntries | where HostName -EQ $HostName)
 			{
 				throw "The hostname [$($HostName)] already exists in the host file with IP [$($result.IpAddress)]"
 			}
-			elseif ($result = Get-PlHostEntry | where IPAddress -EQ $IpAddress)
+			elseif ($result = $existingHostEntries | where IPAddress -EQ $IpAddress)
 			{
 				Write-Warning "The IP address [$($result.IPAddress)] already exists in the host file for the hostname [$($HostName)]. You should probabloy remove the old one hostname reference."
 			}
@@ -45,13 +64,36 @@ function Add-PlHostEntry
 				$vals += "# $Comment"
 			}
 			
-			$hostsFilePath = "$env:SystemRoot\System32\drivers\etc\hosts"
-			## If the hosts file doesn't end with a blank line, make it so
-			if ((Get-Content -Path $hostsFilePath -Raw) -notmatch '\n$')
-			{
-				Add-Content -Path $hostsFilePath -Value ''
+			$sb = {
+				param($HostFilePath,$vals)
+				
+				## If the hosts file doesn't end with a blank line, make it so
+				if ((Get-Content -Path $HostFilePath -Raw) -notmatch '\n$')
+				{
+					Add-Content -Path $HostFilePath -Value ''
+				}
+				Add-Content -Path $HostFilePath -Value ($vals -join "`t")
 			}
-			Add-Content -Path $HostFilePath -Value ($vals -join "`t")
+			
+			if ($ComputerName -eq (hostname))
+			{
+				& $sb $HostFilePath $vals
+			}
+			else
+			{
+				$icmParams = @{
+					'ComputerName' = $ComputerName
+					'ScriptBlock' = $sb
+					'ArgumentList' = $HostFilePath,$vals
+				}
+				if ($PSBoundParameters.ContainsKey('Credential'))
+				{
+					$icmParams.Credential = $Credential
+				}
+				[pscustomobject](Invoke-Command @icmParams)
+			}
+			
+			
 		}
 		catch
 		{
