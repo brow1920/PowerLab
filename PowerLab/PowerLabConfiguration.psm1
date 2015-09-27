@@ -757,7 +757,7 @@ function Set-WorkgroupConnectivity
 		try
 		{
 			$hostServerConfig = Get-PlHostServerConfiguration
-			#region Add the host server hostname to local hosts file
+			#region Hosts file
 			if (-not (Get-PlHostEntry | where { $_.HostName -eq $hostServerConfig.Name -and $_.IPAddress -eq $hostServerConfig.IPAddress }))
 			{
 				Write-Verbose -Message "Host file entry for [$($hostServerConfig.Name)] doesn't exist. Adding..."
@@ -765,8 +765,16 @@ function Set-WorkgroupConnectivity
 			}
 			else
 			{
-				Write-Verbose -Message "The host file entry for [$($hostServerConfig.Name)] already exists."	
+				Write-Verbose -Message "The host file entry for [$($hostServerConfig.Name)] already exists."
 			}
+			
+			$plParams = @{
+				'ComputerName' = $HostServerConfig.Name
+				'Credential' = $HostServerConfig.Credential
+				'HostName' = $env:COMPUTERNAME
+				'IPAddress' = (Get-NetIPAddress -AddressFamily IPv4 | where { $_.PrefixOrigin -ne 'WellKnown' }).IPAddress
+			}
+			Add-PlHostEntry @plParams
 			#endregion
 			
 			#region Add the host server to the trusted hosts
