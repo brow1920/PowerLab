@@ -1,10 +1,9 @@
-[string]$HostFilePath = "$env:SystemRoot\System32\drivers\etc\hosts"
-
 function Add-PlHostEntry
 {
 	[CmdletBinding()]
 	param
 	(
+		
 		[Parameter(Mandatory)]
 		[ValidateNotNullOrEmpty()]
 		[ValidatePattern('^[^\.]+$')]
@@ -13,6 +12,10 @@ function Add-PlHostEntry
 		[Parameter(Mandatory)]
 		[ValidateNotNullOrEmpty()]
 		[ipaddress]$IpAddress,
+		
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string]$ComputerName,
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
@@ -63,7 +66,18 @@ function Get-PlHostEntry
 	[OutputType([System.Management.Automation.PSCustomObject])]
 	param
 	(
-
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string]$ComputerName = $env:COMPUTERNAME,
+		
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[pscredential]$Credential,
+		
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string]$HostFilePath = "$env:SystemRoot\System32\drivers\etc\hosts"
+		
 	)
 	begin {
 		$ErrorActionPreference = 'Stop'
@@ -71,19 +85,40 @@ function Get-PlHostEntry
 	process {
 		try
 		{
-			$regex = '^(?<ipAddress>[0-9.]+)[^\w]*(?<hostname>[^#\W]*)($|[\W]{0,}#\s+(?<comment>.*))'
-			$matches = $null
-			Get-Content -Path $HostFilePath | foreach {
-				$null = $_ -match $regex
-				if ($matches)
-				{
-					[pscustomobject]@{
-						'IPAddress' = $matches.ipAddress
-						'HostName' = $matches.hostname
-						'Comment' = $matches.comment
-					}
-				}
+			$sb = {
+				param($HostFilePath)
+				$regex = '^(?<ipAddress>[0-9.]+)[^\w]*(?<hostname>[^#\W]*)($|[\W]{0,}#\s+(?<comment>.*))'
 				$matches = $null
+				Get-Content -Path $HostFilePath | foreach {
+					$null = $_ -match $regex
+					if ($matches)
+					{
+						[pscustomobject]@{
+							'IPAddress' = $matches.ipAddress
+							'HostName' = $matches.hostname
+							'Comment' = $matches.comment
+						}
+					}
+					$matches = $null
+				}
+			}
+			
+			if ($ComputerName -eq (hostname))
+			{
+				& $sb $HostFilePath
+			}
+			else
+			{
+				$icmParams = @{
+					'ComputerName' = $ComputerName
+					'ScriptBlock' = $sb
+					'ArgumentList' = $HostFilePath
+				}
+				if ($PSBoundParameters.ContainsKey('Credential'))
+				{
+					$icmParams.Credential = $Credential
+				}
+				Invoke-Command @icmParams
 			}
 		}
 		catch
