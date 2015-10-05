@@ -10,7 +10,7 @@ $xConfig = [xml](Get-Content -Path $ConfigFilePath)
 $xConfig = $xConfig.PowerLab
 
 $global:HostServer = [pscustomobject]@{
-	'Name' = $xConfig.HostServer
+	'Name' = $xConfig.HostServer.Name
 	'Credential' = Import-Clixml -Path $HostServerCredFile
 }
 #endregion
@@ -35,7 +35,6 @@ function Invoke-PlAction
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
 		[switch]$PassThru
-			
 	)
 	begin {
 		$ErrorActionPreference = 'Stop'

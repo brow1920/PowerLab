@@ -12,7 +12,11 @@ function Get-PlSwitch
 		try
 		{
 			$switch = (Get-PlConfigurationData).Environment.Switch
-			Get-VMSwitch -ComputerName $Hostserver.name -Name $switch.Name -SwitchType $switch.Type -ErrorAction SilentlyContinue
+			$gsParams = @{
+				'Name' = $switch.Name
+				'SwitchType' = $switch.Type
+			}
+			Get-VMSwitch @gsParams
 		}
 		catch
 		{
@@ -44,9 +48,13 @@ function New-PlSwitch
 	{
 		try
 		{
-			if (-not (Get-VMSwitch -ComputerName $Hostserver.name -Name $Name -ea SilentlyContinue))
+			if (-not (Get-PlSwitch | where { $_.Name -eq $Name }))
 			{
-				New-VMSwitch -ComputerName $HostServer.Name -Name $Name -SwitchType $SwitchType
+				$sParams = @{
+					'Name' = $Name
+					'SwitchType' = $SwitchType
+				}
+				New-VMSwitch @sParams
 			}
 			else
 			{
