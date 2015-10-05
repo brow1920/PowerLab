@@ -108,14 +108,15 @@ function Get-PlVm
 	{
 		try
 		{
+			$gvParams = @{
+				'ComputerName' = $HostServer.Name	
+			}
 			if ($PSBoundParameters.ContainsKey('Name'))
 			{
-				Get-VM -ComputerName $HostServer.Name -Name $Name
+				$gvParams.Name = $Name
 			}
-			else
-			{
-				Get-VM -ComputerName $HostServer.Name
-			}
+			Get-VM @gvParams
+			
 		}
 		catch
 		{
