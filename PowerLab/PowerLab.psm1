@@ -15,6 +15,70 @@ $global:HostServer = [pscustomobject]@{
 }
 #endregion
 
+function Invoke-PlAction
+{
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory)]
+		[ValidateNotNullOrEmpty()]
+		[scriptblock]$ScriptBlock,
+		
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[switch]$AsJob,
+	
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[switch]$Wait,
+	
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[switch]$PassThru
+			
+	)
+	begin {
+		$ErrorActionPreference = 'Stop'
+	}
+	process {
+		try
+		{
+			if ($PSBoundParameters.ContainsKey('AsJob')) {
+				$sjParams = @{
+					'ScriptBlock' = $Scriptblock
+				}
+				if ($PSBoundParameters.ContainsKey('Wait'))
+				{
+					$sjParams.Wait = $true
+				}
+				if ($PSBoundParameters.ContainsKey('PassThru')) {
+					Start-Job @sjParams
+				}
+				else
+				{
+					$null = Start-Job @sjParams
+				}
+			}
+			else
+			{
+				if ($PSBoundParameters.ContainsKey('PassThru'))
+				{
+					& $ScriptBlock
+				}
+				else
+				{
+					$null = & $ScriptBlock
+				}
+				
+			}
+		}
+		catch
+		{
+			$PSCmdlet.ThrowTerminatingError($_)
+		}
+	}
+}
+
 function New-PlHost
 {
 	[CmdletBinding()]
