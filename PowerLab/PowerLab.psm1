@@ -13,6 +13,17 @@ $global:HostServer = [pscustomobject]@{
 	'Name' = $xConfig.HostServer.Name
 	'Credential' = Import-Clixml -Path $HostServerCredFile
 }
+
+if ((cmdkey /list:($HostServer.Name)) -match '\* NONE \*')
+{
+	$credential = Get-Credential -Message "The credentials for $($HostServer.Name) were not found on the local machine. Please provide a username and password with access to the host."
+	if (-not $credential)
+	{
+		throw 'No credential provided. You must specify a credential to connect to the host server'	
+	}
+	cmdkey /add:($HostServer.Name) /user:($credential.UserName) /pass:($credential.GetNetworkCredential().Password)
+}
+
 #endregion
 
 function Invoke-PlAction
