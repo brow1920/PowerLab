@@ -37,15 +37,7 @@ function Invoke-PlAction
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[switch]$AsJob,
-	
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
-		[switch]$Wait,
-	
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
-		[switch]$PassThru
+		[switch]$AsJob
 	)
 	begin {
 		$ErrorActionPreference = 'Stop'
@@ -57,10 +49,6 @@ function Invoke-PlAction
 				$sjParams = @{
 					'ScriptBlock' = $Scriptblock
 				}
-				if ($PSBoundParameters.ContainsKey('Wait'))
-				{
-					$sjParams.Wait = $true
-				}
 				if ($PSBoundParameters.ContainsKey('PassThru')) {
 					Start-Job @sjParams
 				}
@@ -71,15 +59,7 @@ function Invoke-PlAction
 			}
 			else
 			{
-				if ($PSBoundParameters.ContainsKey('PassThru'))
-				{
-					& $ScriptBlock
-				}
-				else
-				{
-					$null = & $ScriptBlock
-				}
-				
+				& $ScriptBlock				
 			}
 		}
 		catch

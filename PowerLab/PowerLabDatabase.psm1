@@ -1,6 +1,8 @@
 $global:Database = (Get-PlConfigurationData).Configuration.Database.Name
 $global:Instance = (Get-PlConfigurationData).Configuration.Database.Instance.Name
 
+#Requires -Module sqlps
+
 function Add-PlVmDatabaseEntry
 {
 	[CmdletBinding()]
