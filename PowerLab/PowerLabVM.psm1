@@ -9,6 +9,10 @@ function New-PlVm
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
+		[int]$Count = 1,
+		
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
 		[string]$Switch = (Get-PlConfigurationData).Environment.Switch.Name,
 
 		[Parameter()]
@@ -79,9 +83,20 @@ function New-PlVm
 				'Switch' = $Switch
 				'Generation' = $Generation
 			}
+			if ($PSBoundParameters.ContainsKey('AsJob')) {
+				$vmParams.AsJob = $true
+			}
+			
 			$vm = New-VM @vmParams
-			Add-PlVmDatabaseEntry -Name $Name -CreationDate (Get-Date).ToString()
+			#Add-PlVmDatabaseEntry -Name $Name -CreationDate (Get-Date).ToString()
 			$vm
+			if ($Count -gt 1)
+			{
+				for ($i = 1; $i -lt $Count; $i++)
+				{
+					New-PlVm	
+				}
+			}
 		}
 		catch
 		{
