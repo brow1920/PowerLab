@@ -1,5 +1,5 @@
 $global:Database = (Get-PlConfigurationData).Configuration.Database.Name
-$global:Instance = (Get-PlConfigurationData).Configuration.Database.Instance.Name
+$global:Instance = ".\$((Get-PlConfigurationData).Configuration.Database.Instance.Name)"
 
 #Requires -Module sqlps
 
@@ -151,7 +151,7 @@ function New-PlDatabase
 			}
 
 			$null = [System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SMO')
-			$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList ".\$Instance"
+			$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $Instance
 			$db = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database($server, $Name)
 			Write-Verbose -Message "Creating the database [$($Name)] in instance [$($Instance)]"
 			$db.Create()
@@ -227,7 +227,7 @@ function Test-PlDatabase
 		{
 			Write-Verbose -Message "Testing for the presence of the database [$($Name)] in instance [$($Instance)]"
 			$null = [System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SMO')
-			$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList ".\$Instance"
+			$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $Instance
 			if (-not $server.Databases[$Database])
 			{
 				$false

@@ -471,6 +471,8 @@ function Install-SQLServerExpress
 				$installArgs = "/q /ACTION=Install /IACCEPTSQLSERVERLICENSETERMS /INSTANCENAME=$($Project.Name) /SQLSYSADMINACCOUNTS=`"Administrators`""
 				Start-Process -FilePath "`"$env:TEMP\SqlExpressTemp\setup.exe`"" -Args $installArgs -Wait -NoNewWindow
 				#endregion
+				
+				Write-Host 'Restart the PowerShell console in order for the SQLPS module to be available' -ForegroundColor Yellow
 			}
 			else
 			{
