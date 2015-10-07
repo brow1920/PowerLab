@@ -468,7 +468,7 @@ function Install-SQLServerExpress
 				
 				#region install
 				Start-Process -FilePath $downloadedFilePath -Args "/u /x:`"$env:TEMP\SqlExpressTemp`"" -Wait -NoNewWindow
-				$installArgs = "/q /ACTION=Install /IACCEPTSQLSERVERLICENSETERMS /INSTANCENAME=$($Project.Name)"
+				$installArgs = "/q /ACTION=Install /IACCEPTSQLSERVERLICENSETERMS /INSTANCENAME=$($Project.Name) /SQLSYSADMINACCOUNTS=`"Administrators`""
 				Start-Process -FilePath "`"$env:TEMP\SqlExpressTemp\setup.exe`"" -Args $installArgs -Wait -NoNewWindow
 				#endregion
 			}
@@ -994,7 +994,7 @@ function Get-InstalledSoftware
 		}
 		catch
 		{
-			Write-Error -Message "Error: $($_.Exception.Message) - Line Number: $($_.InvocationInfo.ScriptLineNumber)" -LogLevel '3'
+			Write-Error $_.Exception.Message
 		}
 	}
 }

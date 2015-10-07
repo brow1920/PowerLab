@@ -1,3 +1,5 @@
+#Requires -RunAsAdministrator
+
 #region Configuration
 Set-StrictMode -Version Latest
 

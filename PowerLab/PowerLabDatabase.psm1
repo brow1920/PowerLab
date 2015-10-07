@@ -127,6 +127,14 @@ function New-PlDatabase
 	(
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
+		[string]$Instance = $Instance,
+		
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string]$Name = $Database,
+	
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
 		[System.Xml.XmlElement[]]$Table = (Get-PlDefaultDatabaseConfig).Tables.Table	
 	)
 	begin
@@ -137,13 +145,15 @@ function New-PlDatabase
 	{
 		try
 		{
-			if (Test-PlDatabase)
+			if (Test-PlDatabase -Name $Name)
 			{
-				throw "The database [$($Database)] already exists"
+				throw "The database [$($Name)] already exists"
 			}
+
 			$null = [System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SMO')
-			$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $Instance
-			$db = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database($server, $Database)
+			$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList ".\$Instance"
+			$db = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database($server, $Name)
+			Write-Verbose -Message "Creating the database [$($Name)] in instance [$($Instance)]"
 			$db.Create()
 			
 			$typeConversions = @{
@@ -154,7 +164,7 @@ function New-PlDatabase
 			
 			foreach ($t in $Table)
 			{
-				Write-Verbose -Message "Creating table [$($t.Name)] in database [$($Database)]"
+				Write-Verbose -Message "Creating table [$($t.Name)] in database [$($Name)]"
 				$tbl = New-Object ('Microsoft.SqlServer.Management.Smo.Table') ($db, $t.Name, 'dbo')
 				$t.Columns.Column | foreach {
 					Write-Verbose -Message "Adding column [$($_.Name)] with type [$($typeConversions[$_.Type])]"
@@ -173,7 +183,7 @@ function New-PlDatabase
 					
 					$tbl.Columns.Add($col)
 				}
-				$pk = new-object ('Microsoft.SqlServer.Management.Smo.Index') ($tbl, "PK_$Database")
+				$pk = new-object ('Microsoft.SqlServer.Management.Smo.Index') ($tbl, "PK_$Name")
 				$pk.IndexKeyType = 'DriPrimaryKey'
 				$pk.IsClustered = $true
 				
@@ -198,7 +208,15 @@ function Test-PlDatabase
 {
 	[CmdletBinding()]
 	param
-	()
+	(
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string]$Instance = $Instance,
+		
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[string]$Name = $Database
+	)
 	begin
 	{
 		$ErrorActionPreference = 'Stop'
@@ -207,8 +225,9 @@ function Test-PlDatabase
 	{
 		try
 		{
+			Write-Verbose -Message "Testing for the presence of the database [$($Name)] in instance [$($Instance)]"
 			$null = [System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SMO')
-			$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $Instance
+			$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList ".\$Instance"
 			if (-not $server.Databases[$Database])
 			{
 				$false

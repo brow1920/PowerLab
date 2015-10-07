@@ -2,7 +2,7 @@
 	<Configuration>
 		<Project Name="PowerLab" />
 		<Database Name="PowerLab">
-			<Instance Name="." />
+			<Instance Name="PowerLab" />
 			<Tables>
 				<Table Name="VMs">
 					<Columns>
