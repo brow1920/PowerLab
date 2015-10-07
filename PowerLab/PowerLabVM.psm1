@@ -88,7 +88,7 @@ function New-PlVm
 			}
 			
 			$vm = New-VM @vmParams
-			#Add-PlVmDatabaseEntry -Name $Name -CreationDate (Get-Date).ToString()
+			Add-PlVmDatabaseEntry -Name $Name -CreationDate (Get-Date).ToString()
 			$vm
 			if ($Count -gt 1)
 			{
