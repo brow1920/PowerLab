@@ -1,7 +1,7 @@
 #region Configuration
 Set-StrictMode -Version Latest
 
-$script:Project = [pscustomobject]@{ 'Name' = 'PowerLab' }
+$global:Project = [pscustomobject]@{ 'Name' = 'PowerLab' }
 
 $global:ConfigFilePath = "$PSScriptRoot\configuration.xml"
 $HostServerCredFile = "$PSScriptRoot\HostServerCred.xml"

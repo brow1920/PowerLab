@@ -90,12 +90,14 @@ function Get-PlDefaultVMConfig
 	[CmdletBinding()]
 	param
 	(
-		
+	
 	)
-	begin {
+	begin
+	{
 		$ErrorActionPreference = 'Stop'
 	}
-	process {
+	process
+	{
 		try
 		{
 			(Get-PlConfigurationData).DefaultVMConfig
@@ -116,12 +118,14 @@ function Get-PlIsoFile
 		[ValidateNotNullOrEmpty()]
 		[ValidateSet('Windows Server 2012 R2 (x64)')]
 		[string]$OperatingSystem
-			
+		
 	)
-	begin {
+	begin
+	{
 		$ErrorActionPreference = 'Stop'
 	}
-	process {
+	process
+	{
 		try
 		{
 			$isoName = (Get-PlConfigurationData).Configuration.ISOs.SelectSingleNode("//ISO[@OS='$OperatingSystem']").Name
@@ -130,9 +134,9 @@ function Get-PlIsoFile
 			$icmParams = @{
 				'ComputerName' = $HostServer.Name
 				'Credential' = $HostServer.Credential
-				'ScriptBlock' = { Get-Item -Path $using:isoPath}
+				'ScriptBlock' = { Get-Item -Path $using:isoPath }
 			}
-			Invoke-Command @icmParams 
+			Invoke-Command @icmParams
 		}
 		catch
 		{
@@ -149,19 +153,21 @@ function Get-PlAnswerFile
 		[Parameter(Mandatory)]
 		[ValidateNotNullOrEmpty()]
 		[string]$VMName
-			
+		
 	)
-	begin {
+	begin
+	{
 		$ErrorActionPreference = 'Stop'
 	}
-	process {
+	process
+	{
 		try
 		{
 			$ansPath = (Get-PlConfigurationData).Configuration.Folders.SelectSingleNode("//Folder[@Name='UnattendXml' and @Location='HostServer']").Path
 			$icmParams = @{
 				'ComputerName' = $HostServer.Name
 				'Credential' = $HostServer.Credential
-				'ScriptBlock' = {Get-Item -Path "$using:ansPath\$using:VMName.xml"}
+				'ScriptBlock' = { Get-Item -Path "$using:ansPath\$using:VMName.xml" }
 			}
 			Invoke-Command @icmParams
 		}
@@ -177,12 +183,14 @@ function Invoke-PlIsoDownload
 	[CmdletBinding()]
 	param
 	(
-		
+	
 	)
-	begin {
+	begin
+	{
 		$ErrorActionPreference = 'Stop'
 	}
-	process {
+	process
+	{
 		try
 		{
 			$startBitsTransferParams = @{
@@ -211,7 +219,7 @@ function Get-PlConfigurationData
 		[Parameter(ParameterSetName = 'ConfigurationFolder')]
 		[ValidateNotNullOrEmpty()]
 		[string]$ConfigurationFolder,
-
+		
 		[Parameter(ParameterSetName = 'VM')]
 		[ValidateNotNullOrEmpty()]
 		[string[]]$VM,
@@ -219,7 +227,7 @@ function Get-PlConfigurationData
 		[Parameter(ParameterSetName = 'Domain')]
 		[ValidateNotNullOrEmpty()]
 		[switch]$Domain,
-	
+		
 		[Parameter(ParameterSetName = 'HostServer')]
 		[ValidateNotNullOrEmpty()]
 		[switch]$HostServer
@@ -245,7 +253,7 @@ function Get-PlConfigurationData
 			}
 			elseif ($PSBoundParameters.ContainsKey('HostServer'))
 			{
-				$xConfig.HostServer	
+				$xConfig.HostServer
 			}
 			elseif ($Domain.IsPresent)
 			{
@@ -274,13 +282,16 @@ function Get-PlVMConfiguration
 		[string[]]$VM
 		
 	)
-	begin {
+	begin
+	{
 		$ErrorActionPreference = 'Stop'
 	}
-	process {
+	process
+	{
 		try
 		{
-			if ($PSBoundParameters.ContainsKey('VM')) {
+			if ($PSBoundParameters.ContainsKey('VM'))
+			{
 				Get-PlConfigurationData -VM $VM
 			}
 			else
@@ -384,12 +395,14 @@ function Install-RSAT
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
 		[string]$Url = 'http://download.microsoft.com/download/1/8/E/18EA4843-C596-4542-9236-DE46F780806E/Windows8.1-KB2693643-x64.msu'
-			
+		
 	)
-	begin {
+	begin
+	{
 		$ErrorActionPreference = 'Stop'
 	}
-	process {
+	process
+	{
 		try
 		{
 			if (-not (Get-InstalledSoftware | where { $_.Name -like '*Remote Server Administration Tools*' }))
@@ -431,14 +444,16 @@ function Install-SQLServerExpress
 		[ValidateNotNullOrEmpty()]
 		[string]$Url = 'http://download.microsoft.com/download/E/A/E/EAE6F7FC-767A-4038-A954-49B8B05D04EB/Express%2064BIT/SQLEXPR_x64_ENU.exe'
 	)
-	begin {
+	begin
+	{
 		$ErrorActionPreference = 'Stop'
 	}
-	process {
+	process
+	{
 		try
 		{
-#			if (-not (Get-InstalledSoftware | where { $_.Name -like '*Remote Server Administration Tools*' }))
-#			{
+			if (-not (Get-InstalledSoftware | where { $_.Name -eq 'Microsoft SQL Server 2014 (64-bit)' }))
+			{
 				#region SQL Server Express download
 				$downloadedFilePath = "$env:TEMP\$($Url | Split-Path -Leaf)"
 				if (-not (Test-Path -Path $downloadedFilePath -PathType Leaf))
@@ -452,13 +467,15 @@ function Install-SQLServerExpress
 				#endregion
 				
 				#region install
-			Start-Process -FilePath $downloadedFilePath -Args "/u /x:`"$env:TEMP\SqlExpressTemp`"" -Wait -NoNewWindow
+				Start-Process -FilePath $downloadedFilePath -Args "/u /x:`"$env:TEMP\SqlExpressTemp`"" -Wait -NoNewWindow
+				$installArgs = "/q /ACTION=Install /IACCEPTSQLSERVERLICENSETERMS /INSTANCENAME=$($Project.Name)"
+				Start-Process -FilePath "`"$env:TEMP\SqlExpressTemp\setup.exe`"" -Args $installArgs -Wait -NoNewWindow
 				#endregion
-#			}
-#			else
-#			{
-#				Write-Verbose -Message 'RSAT is already installed.'
-#			}
+			}
+			else
+			{
+				Write-Verbose -Message 'SQL Express is already installed.'
+			}
 		}
 		catch
 		{
@@ -475,16 +492,18 @@ function Save-PlHostServerCredential
 		[Parameter(Mandatory)]
 		[ValidateNotNullOrEmpty()]
 		[pscredential]$Credential,
-	
+		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
 		[string]$OutFilePath = "$PSScriptRoot\HostServerCredential.xml"
-			
+		
 	)
-	begin {
+	begin
+	{
 		$ErrorActionPreference = 'Stop'
 	}
-	process {
+	process
+	{
 		try
 		{
 			$Credential | Export-CliXml $OutFilePath
@@ -505,12 +524,14 @@ function Get-PlHostServerCredential
 		[ValidateNotNullOrEmpty()]
 		[ValidateScript({ Test-Path -Path $_ -PathType Leaf })]
 		[string]$FilePath = "$PSScriptRoot\HostServerCredential.xml"
-			
+		
 	)
-	begin {
+	begin
+	{
 		$ErrorActionPreference = 'Stop'
 	}
-	process {
+	process
+	{
 		try
 		{
 			Import-Clixml -Path $FilePath
@@ -531,10 +552,12 @@ function Test-PlHostServerCredential
 		[ValidateNotNullOrEmpty()]
 		[string]$FilePath = "$PSScriptRoot\HostServerCredential.xml"
 	)
-	begin {
+	begin
+	{
 		$ErrorActionPreference = 'Stop'
 	}
-	process {
+	process
+	{
 		Test-Path -Path $FilePath -PathType Leaf
 	}
 }
@@ -682,9 +705,10 @@ function Set-WorkgroupConnectivity
 	[CmdletBinding()]
 	param
 	(
-		
+	
 	)
-	begin {
+	begin
+	{
 		$ErrorActionPreference = 'Stop'
 		
 		function Test-PsRemoting
@@ -692,7 +716,7 @@ function Set-WorkgroupConnectivity
 			param (
 				[Parameter(Mandatory = $true)]
 				$computername,
-			
+				
 				[Parameter(Mandatory)]
 				[ValidateNotNullOrEmpty()]
 				[pscredential]$Credential
@@ -753,7 +777,8 @@ function Set-WorkgroupConnectivity
 		}
 		
 	}
-	process {
+	process
+	{
 		try
 		{
 			$hostServerConfig = Get-PlHostServerConfiguration
@@ -804,7 +829,7 @@ function Set-WorkgroupConnectivity
 			}
 			else
 			{
-				Write-Verbose -Message "PS remoting is already enabled on [$($hostServerConfig.Name)]"	
+				Write-Verbose -Message "PS remoting is already enabled on [$($hostServerConfig.Name)]"
 			}
 			#endregion
 			
