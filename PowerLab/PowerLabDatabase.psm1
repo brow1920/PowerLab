@@ -315,12 +315,14 @@ function New-PlDatabaseRow
 	{
 		try
 		{
+			Push-Location
 			$sqlParams = @{
 				'Database' = $Database
 				'ServerInstance' = $Instance
 				'Query' = "INSERT INTO $Table ($($Column -join ',')) VALUES ('$($Value -join "','")')"
 			}
 			Invoke-Sqlcmd @sqlParams
+			Pop-Location
 		}
 		catch
 		{
