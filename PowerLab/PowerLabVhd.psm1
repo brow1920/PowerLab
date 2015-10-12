@@ -9,7 +9,7 @@ function Add-OperatingSystem
 	
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[ValidateSet('Windows Server 2012 R2 (x64)')]
+		[ValidateSet('Windows Server 2012 R2 (x64)','Windows Server 2008 R2 (x64)')]
 		[string]$OperatingSystem = (Get-PlDefaultVMConfig).OS.Name
 		
 	)

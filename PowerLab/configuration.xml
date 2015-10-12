@@ -32,6 +32,7 @@
 		</Files>
 		<ISOs>
 			<ISO Name="en_windows_server_2012_r2_with_update_x64_dvd_4065220.iso" OS="Windows Server 2012 R2 (x64)"/>
+			<ISO Name="en_windows_server_2008_r2_with_sp1_vl_build_x64_dvd_617403.iso" OS="Windows Server 2008 R2 (x64)"/>
 		</ISOs>
 	</Configuration>
 	<HostServer Name="HYPERVSRV" IPAddress="192.168.0.250"/>
