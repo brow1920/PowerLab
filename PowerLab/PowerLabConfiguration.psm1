@@ -116,7 +116,6 @@ function Get-PlIsoFile
 	(
 		[Parameter(Mandatory)]
 		[ValidateNotNullOrEmpty()]
-		[ValidateSet('Windows Server 2012 R2 (x64)')]
 		[string]$OperatingSystem
 		
 	)
@@ -128,6 +127,12 @@ function Get-PlIsoFile
 	{
 		try
 		{
+			$allowedOSes = (Get-PlConfigurationData).Configuration.ISOs.ISO.OS
+			if ($OperatingSystem -notin $allowedOSes)
+			{
+				throw "The operating system [$($OperatingSystem)] is not configured. Use any of the following instead: $allowedOSes"
+			}
+			
 			$isoName = (Get-PlConfigurationData).Configuration.ISOs.SelectSingleNode("//ISO[@OS='$OperatingSystem']").Name
 			$isosPath = (Get-PlConfigurationData).Configuration.Folders.SelectSingleNode("//Folder[@Name='ISO' and @Location='HostServer']").Path
 			$isoPath = "$isosPath\$isoName"

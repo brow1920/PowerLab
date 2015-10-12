@@ -9,7 +9,6 @@ function Add-OperatingSystem
 	
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[ValidateSet('Windows Server 2012 R2 (x64)','Windows Server 2008 R2 (x64)')]
 		[string]$OperatingSystem = (Get-PlDefaultVMConfig).OS.Name
 		
 	)
@@ -19,6 +18,12 @@ function Add-OperatingSystem
 	process {
 		try
 		{
+			$allowedOSes = (Get-PlConfigurationData).Configuration.ISOs.ISO.OS
+			if ($OperatingSystem -notin $allowedOSes)
+			{
+				throw "The operating system [$($OperatingSystem)] is not configured. Use any of the following instead: $allowedOSes"
+			}
+			
 			$vhdName = "$($InputObject.Name).$((Get-PlDefaultVHDConfig).Type)"
 			Write-Verbose -Message "VHD name is [$($vhdName)]"
 			if (Test-PlVhd -Name $vhdName)
@@ -152,7 +157,6 @@ function New-PlVhd
 	
 		[Parameter(Mandatory,ParameterSetName = 'OSInstall')]
 		[ValidateNotNullOrEmpty()]
-		[ValidateSet('Windows Server 2012 R2 (x64)')]
 		[string]$OperatingSystem,
 	
 		[Parameter(ParameterSetName = 'OSInstall')]
@@ -167,6 +171,13 @@ function New-PlVhd
 	{
 		try
 		{
+			
+			$allowedOSes = (Get-PlConfigurationData).Configuration.ISOs.ISO.OS
+			if ($OperatingSystem -notin $allowedOSes)
+			{
+				throw "The operating system [$($OperatingSystem)] is not configured. Use any of the following instead: $allowedOSes"
+			}
+			
 			$sb = {
 				if (-not (Test-Path -Path $using:Path -PathType Container))
 				{
