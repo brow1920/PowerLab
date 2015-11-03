@@ -31,12 +31,16 @@ function New-PlVm
 		
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[ValidateSet('Windows Server 2012 R2 (x64)')]
 		[string]$OperatingSystem = (Get-PlDefaultVMConfig).OS.Name,
 	
 		[Parameter()]
 		[ValidateNotNullOrEmpty()]
-		[switch]$AsJob
+		[switch]$AsJob,
+	
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[switch]$Wait
+		
 		
 	)
 	begin
@@ -47,56 +51,102 @@ function New-PlVm
 	{
 		try
 		{
-			if (-not $PSBoundParameters.ContainsKey('Name'))
+			$allowedOSes = (Get-PlConfigurationData).Configuration.ISOs.ISO.OS
+			if ($OperatingSystem -notin $allowedOSes)
 			{
-				$os = (Get-PlDefaultVMConfig).Hostnames.SelectSingleNode("//Hostname[@OS='$OperatingSystem']")
-				if (-not $os)
+				throw "The operating system [$($OperatingSystem)] is not configured. Use any of the following instead: $allowedOSes"	
+			}
+			
+			
+			$scriptBlock = {
+				param(
+					[Parameter()]
+					[ValidateNotNullOrEmpty()]
+					[string]$Name = $Name,
+					
+					[Parameter()]
+					[ValidateNotNullOrEmpty()]
+					[string]$Switch = $Switch,
+					
+					[Parameter()]
+					[ValidateNotNullOrEmpty()]
+					[ValidateRange(512MB, 64GB)]
+					[int64]$MemoryStartupBytes = $MemoryStartupBytes,
+					
+					[Parameter()]
+					[ValidateNotNullOrEmpty()]
+					[ValidateSet('1', '2')]
+					[int]$Generation = $Generation,
+					
+					[Parameter()]
+					[ValidateNotNullOrEmpty()]
+					[string]$Path = $Path,
+					
+					[Parameter()]
+					[ValidateNotNullOrEmpty()]
+					[string]$OperatingSystem = $OperatingSystem
+				)
+				
+				if (-not $Name)
 				{
-					throw "No default hostname set in configuration for OS [$($OperatingSystem)]"	
-				}
-				$osPrefix = $os.Prefix
-				$existingOSNames = (Get-PlVm).Name | where { $_ -match "^$osPrefix" } | Sort -Descending
-				if (-not $existingOSNames)
-				{
-					$latestNum = 0
-				}
-				else
-				{
-					if ($existingOSNames -is [string])
+					
+					$os = (Get-PlDefaultVMConfig).Hostnames.SelectSingleNode("//Hostname[@OS='$OperatingSystem']")
+					if (-not $os)
 					{
-						[int]$latestNum = [regex]::Matches($existingOSNames, '(\d+)$').Groups[0].Value
+						throw "No default hostname set in configuration for OS [$($OperatingSystem)]"
+					}
+					$osPrefix = $os.Prefix
+					$existingOSNames = (Get-PlVm).Name | where { $_ -match "^$osPrefix" } | Sort -Descending
+					if (-not $existingOSNames)
+					{
+						$latestNum = 0
 					}
 					else
 					{
-						[int]$latestNum = [regex]::Matches($existingOSNames[0], '(\d+)$').Groups[0].Value
+						if ($existingOSNames -is [string])
+						{
+							[int]$latestNum = [regex]::Matches($existingOSNames, '(\d+)$').Groups[0].Value
+						}
+						else
+						{
+							[int]$latestNum = [regex]::Matches($existingOSNames[0], '(\d+)$').Groups[0].Value
+						}
+						
 					}
-					
+					$Name = '{0}{1}' -f $osPrefix, ($latestNum + 1).ToString('00')
 				}
-				$Name = '{0}{1}' -f $osPrefix, ($latestNum + 1).ToString('00')
+				
+				$vmParams = @{
+					'ComputerName' = $HostServer.Name
+					'Name' = $Name
+					'Path' = $Path
+					'MemoryStartupBytes' = $MemoryStartupBytes
+					'Switch' = $Switch
+					'Generation' = $Generation
+				}
+				$vm = New-VM @vmParams
+				Add-PlVmDatabaseEntry -Name $Name -CreationDate (Get-Date).ToString()
+				$vm
 			}
 
-			$vmParams = @{
-				'ComputerName' = $HostServer.Name
-				'Name' = $Name
-				'Path' = $Path
-				'MemoryStartupBytes' = $MemoryStartupBytes
-				'Switch' = $Switch
-				'Generation' = $Generation
+			if ($AsJob.IsPresent)
+			{
+				Start-Job -ScriptBlock $scriptBlock -InitializationScript {Import-Module PowerLab}
 			}
-			if ($PSBoundParameters.ContainsKey('AsJob')) {
-				$vmParams.AsJob = $true
+			else
+			{
+				& $scriptblock
 			}
 			
-			$vm = New-VM @vmParams
-			Add-PlVmDatabaseEntry -Name $Name -CreationDate (Get-Date).ToString()
-			$vm
 			if ($Count -gt 1)
 			{
 				for ($i = 1; $i -lt $Count; $i++)
 				{
-					New-PlVm	
+					New-PlVm
 				}
 			}
+			
+			
 		}
 		catch
 		{
